@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "2000:2000"
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Mount uploads directory for persistent file storage
+      - ./uploads:/app/uploads
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge

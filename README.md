@@ -119,6 +119,66 @@ Once the application is running, access the Swagger API documentation at:
 http://localhost:2000/docs
 ```
 
+## 🐳 Docker Deployment
+
+### Quick Start with Docker Compose
+
+1. **Environment Setup for Docker:**
+
+   Create a `.env.local` file in the root directory based on the `example-env.txt`. This file will be used by Docker Compose.
+
+   ```bash
+   cp example-env.txt .env.local
+   ```
+
+   Update the database configuration in `.env.local` to match your Docker database setup if needed.
+
+2. **Build and run the application:**
+
+   ```bash
+   docker-compose up --build
+   ```
+
+3. **Access the application:**
+   - API: http://localhost:2000
+   - Swagger Docs: http://localhost:2000/docs
+
+### Docker Commands
+
+```bash
+# Build the Docker image
+docker build -t data-labeling-app .
+
+# Run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the application
+docker-compose down
+```
+
+### Environment Variables for Docker
+
+Create a `.env.local` file in the root directory based on the `example-env.txt`. The Docker Compose file is configured to use `.env.local` for environment variables.
+
+### Docker Compose Configuration
+
+The `docker-compose.yml` includes:
+
+- **Port Mapping**: Maps container port 2000 to host port 2000
+- **Volume Mounts**: Mounts the `./uploads` directory for persistent file storage
+- **Networks**: Uses a custom bridge network for service isolation
+- **Restart Policy**: Automatically restarts the container unless manually stopped
+
+### Production Considerations
+
+- **Security**: The Dockerfile runs as non-root user (`nestjs`)
+- **Health Checks**: Built-in health check for container orchestration
+- **Multi-stage Build**: Optimized for small production images
+- **Signal Handling**: Uses `dumb-init` for proper signal handling
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
