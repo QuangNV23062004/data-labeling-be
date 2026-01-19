@@ -1,7 +1,9 @@
-API_PREFIX="/api"
+TZ="Asia/Ho_Chi_Minh"
+API_PREFIX="api"
 API_VERSION="v1"
 NODE_ENV="development"
 PORT=2000
+SERVER_HOST="http://localhost"
 
 CLIENT_URL_1="http://localhost:3000"
 CLIENT_URL_2="http://localhost:5173"
@@ -13,6 +15,8 @@ DB_USERNAME="postgres"
 DB_PASSWORD="postgres"
 DB_NAME="postgres"
 DB_SYNCHRONIZE=true
+DB_LOGGING=true
+DB_SSL=true
 
 JWT_ACCESS_PUBLIC_SECRET=your_access_public_key
 JWT_ACCESS_PRIVATE_SECRET=your_access_private_key
@@ -20,6 +24,8 @@ JWT_ACCESS_EXPIRES_IN=1h
 JWT_REFRESH_PUBLIC_SECRET=your_refresh_public_key
 JWT_REFRESH_PRIVATE_SECRET=your_refresh_private_key
 JWT_REFRESH_EXPIRES_IN=30d
+JWT_RESET_PASSWORD_SECRET=your_reset_secret
+JWT_RESET_PASSWORD_EXPIRES_IN=30m
 
 EMAIL_HOST="smtp.example.com"
 EMAIL_PORT=587

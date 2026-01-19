@@ -64,11 +64,15 @@ cp example-env.txt .env
 **Required `.env` Variables:**
 
 ```ini
+# Timezone
+TZ="Asia/Ho_Chi_Minh"
+
 # Server Configuration
-API_PREFIX="/api"
+API_PREFIX="api"
 API_VERSION="v1"
 NODE_ENV="development"
 PORT=2000
+SERVER_HOST="http://localhost"
 
 # Client Configuration (CORS)
 CLIENT_URL_1="http://localhost:3000"
@@ -82,6 +86,8 @@ DB_USERNAME="postgres"
 DB_PASSWORD="your_password"
 DB_NAME="your_db_name"
 DB_SYNCHRONIZE=true
+DB_LOGGING=true
+DB_SSL=true
 
 # JWT Configuration
 JWT_ACCESS_PUBLIC_SECRET="your_access_public_key"
@@ -90,6 +96,8 @@ JWT_ACCESS_EXPIRES_IN="1h"
 JWT_REFRESH_PUBLIC_SECRET="your_refresh_public_key"
 JWT_REFRESH_PRIVATE_SECRET="your_refresh_private_key"
 JWT_REFRESH_EXPIRES_IN="30d"
+JWT_RESET_PASSWORD_SECRET="your_reset_secret"
+JWT_RESET_PASSWORD_EXPIRES_IN="30m"
 
 # Email Configuration (SMTP)
 EMAIL_HOST="smtp.example.com"
