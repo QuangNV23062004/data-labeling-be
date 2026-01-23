@@ -26,6 +26,7 @@ import { ErrorLoggingInterceptor } from './interceptors/error-logging.intercepto
 import { ErrorLogRepository } from './modules/error-logs/error-logs.repository';
 import { AccountRepository } from './modules/account/account.repository';
 import { StorageModule } from './common/storage/storage.module';
+import { LabelCategoryModule } from './modules/label-category/label-category.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { StorageModule } from './common/storage/storage.module';
     AuthModule,
     ErrorLogsModule,
     ResetPasswordTokenModule,
+    LabelCategoryModule,
   ],
   controllers: [AppController],
   providers: [
