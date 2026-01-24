@@ -6,24 +6,18 @@ import { FilterLabelCategoryDto } from './dtos/filter-label-category.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Injectable } from '@nestjs/common';
 import { Not } from 'typeorm/find-options/operator/Not';
+import { In } from 'typeorm/find-options/operator/In';
+import unaccent from 'unaccent';
+import { ILike } from 'typeorm/find-options/operator/ILike';
+import { BaseRepository } from 'src/common/repository/base.repository';
 
 @Injectable()
-export class LabelCategoryRepository {
+export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity> {
   constructor(
     @InjectRepository(LabelCategoryEntity)
-    private readonly labelCategoryRepo: Repository<LabelCategoryEntity>,
-  ) {}
-
-  async GetEntityManager() {
-    return this.labelCategoryRepo.manager;
-  }
-
-  async GetRepository(entityManager?: EntityManager) {
-    if (entityManager) {
-      return entityManager.getRepository(LabelCategoryEntity);
-    }
-
-    return this.labelCategoryRepo;
+    repository: Repository<LabelCategoryEntity>,
+  ) {
+    super(repository, LabelCategoryEntity);
   }
 
   async Create(
@@ -47,6 +41,19 @@ export class LabelCategoryRepository {
       });
     }
     return repository.findOne({ where: where });
+  }
+
+  async FindByIds(
+    ids: string[],
+    includeDeleted: boolean,
+    entityManager?: EntityManager,
+  ): Promise<LabelCategoryEntity[]> {
+    const repository = await this.GetRepository(entityManager);
+    const where: any = { id: In(ids) };
+    if (!includeDeleted) {
+      return repository.find({ where: { ...where, isDeleted: false } });
+    }
+    return repository.find({ where: where });
   }
 
   async FindAll(
@@ -87,7 +94,7 @@ export class LabelCategoryRepository {
     entityManager?: EntityManager,
   ): Promise<LabelCategoryEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    let where: any = { name: name };
+    let where: any = { name: ILike(`%${unaccent(name)}%`) };
     if (!includeDeleted) {
       where = { ...where, isDeleted: false };
     }
@@ -130,7 +137,6 @@ export class LabelCategoryRepository {
     const page = query?.page || 1;
     const limit = query?.limit || 10;
     const offset = (page - 1) * limit;
-    qb.skip(offset).take(limit);
 
     const items = await qb.skip(offset).take(limit).getMany();
 
@@ -162,7 +168,7 @@ export class LabelCategoryRepository {
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { isDeleted: true });
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 
   async HardDelete(
@@ -171,12 +177,12 @@ export class LabelCategoryRepository {
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.delete(id);
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { isDeleted: false });
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 }

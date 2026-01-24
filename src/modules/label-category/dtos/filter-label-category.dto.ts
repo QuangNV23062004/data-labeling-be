@@ -24,11 +24,11 @@ export class FilterLabelCategoryDto extends BasePaginationQueryDto {
 
   @ApiPropertyOptional({
     description: 'Field to sort by',
-    enum: ['name', 'description', 'created_at', 'updated_at'],
-    example: 'created_at',
+    enum: ['name', 'description', 'createdAt', 'updatedAt'],
+    example: 'createdAt',
   })
   @IsOptional()
   @IsString()
-  @IsIn(['name', 'description', 'created_at', 'updated_at'])
-  orderBy?: string = 'created_at';
+  @IsIn(['name', 'description', 'createdAt', 'updatedAt'])
+  orderBy?: string = 'createdAt';
 }

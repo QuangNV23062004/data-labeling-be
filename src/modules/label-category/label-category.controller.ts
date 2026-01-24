@@ -126,7 +126,7 @@ export class LabelCategoryController {
     @Query() query: FilterLabelCategoryDto,
     @Query('includeDeleted') includeDeleted?: boolean,
   ) {
-    return await this.labelCategoryService.FindPaginated(
+    return await this.labelCategoryService.FindAll(
       query,
       includeDeleted,
       req?.accountInfo,

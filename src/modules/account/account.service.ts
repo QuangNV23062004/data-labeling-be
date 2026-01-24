@@ -11,13 +11,16 @@ import * as bcrypt from 'bcrypt';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { AccountException } from './exceptions/account-exceptions.exceptions';
 import { AuthPasswordService } from '../auth/services/auth-password.service';
+import { BaseService } from 'src/common/service/base.service';
 
 @Injectable()
-export class AccountService {
+export class AccountService extends BaseService {
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly authPasswordService: AuthPasswordService,
-  ) {}
+  ) {
+    super();
+  }
 
   private getAllowedRoles(accountInfo?: AccountInfo): Role[] {
     if (accountInfo?.role === Role.ADMIN) {
@@ -27,21 +30,6 @@ export class AccountService {
     } else {
       return [];
     }
-  }
-
-  private getIncludeDeleted(
-    accountInfo?: AccountInfo,
-    includeDeleted?: boolean,
-  ) {
-    let safeIncludedDeleted: boolean = false;
-    if (
-      accountInfo &&
-      accountInfo.role === Role.ADMIN &&
-      includeDeleted !== false
-    ) {
-      safeIncludedDeleted = true;
-    }
-    return safeIncludedDeleted;
   }
 
   private checkPermission(id: string, accountInfo?: AccountInfo) {

@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AccountEntity } from './account.entity';
 import { Repository } from 'typeorm/repository/Repository';
@@ -7,23 +8,15 @@ import { FilterAccountDto } from './dtos/filter-account.dto';
 import { EntityManager } from 'typeorm/entity-manager/EntityManager';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from './enums/role.enum';
+import { BaseRepository } from 'src/common/repository/base.repository';
 
-export class AccountRepository {
+@Injectable()
+export class AccountRepository extends BaseRepository<AccountEntity> {
   constructor(
     @InjectRepository(AccountEntity)
-    private readonly accountRepository: Repository<AccountEntity>,
-  ) {}
-
-  async GetEntityManager() {
-    return this.accountRepository.manager;
-  }
-
-  async GetRepository(entityManager?: EntityManager) {
-    if (entityManager) {
-      return entityManager.getRepository(AccountEntity);
-    }
-
-    return this.accountRepository;
+    repository: Repository<AccountEntity>,
+  ) {
+    super(repository, AccountEntity);
   }
 
   async Create(
@@ -164,7 +157,7 @@ export class AccountRepository {
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { isDeleted: true });
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 
   async HardDelete(
@@ -173,12 +166,12 @@ export class AccountRepository {
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.delete(id);
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { isDeleted: false });
-    return (result?.affected as number) > 0;
+    return (result?.affected ?? 0) > 0;
   }
 }

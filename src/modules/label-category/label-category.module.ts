@@ -9,5 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
   imports: [TypeOrmModule.forFeature([LabelCategoryEntity])],
   controllers: [LabelCategoryController],
   providers: [LabelCategoryService, LabelCategoryRepository],
+  exports: [LabelCategoryService, LabelCategoryRepository],
 })
 export class LabelCategoryModule {}

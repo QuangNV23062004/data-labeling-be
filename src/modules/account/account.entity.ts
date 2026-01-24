@@ -1,8 +1,9 @@
 import { BaseEntity } from 'src/common/entity/base.entity';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
 @Entity('accounts')
+@Index('IDX_ACCOUNT_EMAIL', ['email'])
 export class AccountEntity extends BaseEntity {
   @Column({ name: 'username' })
   username: string;

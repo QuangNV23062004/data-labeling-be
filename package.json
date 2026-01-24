@@ -6,6 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "scaffold": "ts-node ./tools/scaffolding.ts",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -60,6 +61,7 @@
     "swagger": "^0.7.5",
     "tailwindcss": "^4.1.18",
     "typeorm": "^0.3.28",
+    "unaccent": "^0.3.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

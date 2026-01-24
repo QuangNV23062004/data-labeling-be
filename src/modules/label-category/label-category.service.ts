@@ -3,30 +3,17 @@ import { LabelCategoryRepository } from './label-category.repository';
 import { CreateLabelCategoryDto } from './dtos/create-label-category.dto';
 import { LabelCategoryEntity } from './label-category.entity';
 import { AccountInfo } from 'src/interfaces/request';
-import { Role } from '../account/enums/role.enum';
 import { LabelCategoryException } from './exceptions/label-categories-exceptions.exceptions';
 import { FilterLabelCategoryDto } from './dtos/filter-label-category.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { BaseService } from 'src/common/service/base.service';
 
 @Injectable()
-export class LabelCategoryService {
+export class LabelCategoryService extends BaseService {
   constructor(
     private readonly labelCategoryRepository: LabelCategoryRepository,
-  ) {}
-
-  private getIncludeDeleted(
-    accountInfo?: AccountInfo,
-    includeDeleted?: boolean,
   ) {
-    let safeIncludedDeleted: boolean = false;
-    if (
-      accountInfo &&
-      accountInfo.role === Role.ADMIN &&
-      includeDeleted !== false
-    ) {
-      safeIncludedDeleted = true;
-    }
-    return safeIncludedDeleted;
+    super();
   }
 
   async Create(
@@ -64,12 +51,19 @@ export class LabelCategoryService {
     id: string,
     includeDeleted = false,
     accountInfo?: AccountInfo,
-  ): Promise<LabelCategoryEntity | null> {
+  ): Promise<LabelCategoryEntity> {
     const safeIncludedDeleted = this.getIncludeDeleted(
       accountInfo,
       includeDeleted,
     );
-    return this.labelCategoryRepository.FindById(id, safeIncludedDeleted);
+    const labelCategory = await this.labelCategoryRepository.FindById(
+      id,
+      safeIncludedDeleted,
+    );
+    if (!labelCategory) {
+      throw LabelCategoryException.LabelCategoryNotFound;
+    }
+    return labelCategory;
   }
 
   async FindAll(
