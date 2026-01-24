@@ -20,11 +20,11 @@ export class FilterAccountDto extends BasePaginationQueryDto {
 
   @ApiPropertyOptional({
     description: 'Sort field',
-    enum: ['username', 'email', 'created_at', 'updated_at'],
-    default: 'created_at',
+    enum: ['username', 'email', 'createdAt', 'updatedAt'],
+    default: 'createdAt',
   })
   @IsOptional()
   @IsString()
-  @IsIn(['username', 'email', 'created_at', 'updated_at'])
-  orderBy?: string = 'created_at';
+  @IsIn(['username', 'email', 'createdAt', 'updatedAt'])
+  orderBy?: string = 'createdAt';
 }

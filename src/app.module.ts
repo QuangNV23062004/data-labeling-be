@@ -25,6 +25,10 @@ import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
 import { ErrorLoggingInterceptor } from './interceptors/error-logging.interceptor';
 import { ErrorLogRepository } from './modules/error-logs/error-logs.repository';
 import { AccountRepository } from './modules/account/account.repository';
+import { StorageModule } from './common/storage/storage.module';
+import { LabelCategoryModule } from './modules/label-category/label-category.module';
+import { LabelModule } from './modules/label/label.module';
+import { LabelPresetModule } from './modules/label-preset/label-preset.module';
 
 @Module({
   imports: [
@@ -55,6 +59,8 @@ import { AccountRepository } from './modules/account/account.repository';
         },
       }),
     }),
+
+    StorageModule,
     //db module
     DatabaseModule.forRoot(),
 
@@ -63,6 +69,9 @@ import { AccountRepository } from './modules/account/account.repository';
     AuthModule,
     ErrorLogsModule,
     ResetPasswordTokenModule,
+    LabelCategoryModule,
+    LabelModule,
+    LabelPresetModule,
   ],
   controllers: [AppController],
   providers: [

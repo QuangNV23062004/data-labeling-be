@@ -3,6 +3,7 @@ import { DatabaseConfig } from './database.interface';
 import { EmailConfig } from './email.interface';
 import { ClientConfig } from './client.interface';
 import { JwtConfig } from './jwt.interface';
+import { StorageConfig } from './storage.interface';
 
 export interface Config {
   server: ServerConfig;
@@ -10,4 +11,5 @@ export interface Config {
   jwt: JwtConfig;
   email: EmailConfig;
   client: ClientConfig;
+  storage: StorageConfig;
 }

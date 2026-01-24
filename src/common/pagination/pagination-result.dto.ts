@@ -9,6 +9,7 @@ export class PaginationResultDto<T> {
   orderBy: string;
   hasNext: boolean;
   hasPrev: boolean;
+  extra?: any;
 
   constructor(
     data: T[],
@@ -21,6 +22,7 @@ export class PaginationResultDto<T> {
     orderBy: string,
     hasNext: boolean,
     hasPrev: boolean,
+    extra?: any,
   ) {
     this.data = data;
     this.totalPages = totalPages;
@@ -32,5 +34,6 @@ export class PaginationResultDto<T> {
     this.orderBy = orderBy;
     this.hasNext = hasNext;
     this.hasPrev = hasPrev;
+    this.extra = extra;
   }
 }

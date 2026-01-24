@@ -10,7 +10,9 @@ import { jwtValidation } from 'src/configs/jwt/jwt.validation';
 import { emailValidation } from 'src/configs/email/email.validation';
 import * as Joi from 'joi';
 import { clientValidation } from 'src/configs/client/client.validation';
-import { JwtConfig } from 'src/interfaces/configs';
+import { ClientConfig, JwtConfig } from 'src/interfaces/configs';
+import { storageValidation } from 'src/configs/storage/storage.validation';
+import { StorageConfig } from 'src/interfaces/configs/storage.interface';
 
 @Injectable()
 export class TypedConfigService {
@@ -32,8 +34,12 @@ export class TypedConfigService {
     return this.configService.get('email', { infer: true });
   }
 
-  get client() {
+  get client(): ClientConfig {
     return this.configService.get('client', { infer: true });
+  }
+
+  get storage(): StorageConfig {
+    return this.configService.get('storage', { infer: true });
   }
 
   getValidatedSchema() {
@@ -43,6 +49,7 @@ export class TypedConfigService {
       ...jwtValidation,
       ...emailValidation,
       ...clientValidation,
+      ...storageValidation,
     });
     return validation;
   }

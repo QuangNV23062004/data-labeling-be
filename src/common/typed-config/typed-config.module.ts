@@ -6,6 +6,7 @@ import { jwtConfig } from 'src/configs/jwt/jwt.config';
 import { serverConfig } from 'src/configs/server/server.config';
 import { emailConfig } from 'src/configs/email/email.config';
 import { clientConfig } from 'src/configs/client/client.config';
+import { storageConfig } from 'src/configs/storage/storage.config';
 
 @Global()
 @Module({
@@ -18,6 +19,7 @@ import { clientConfig } from 'src/configs/client/client.config';
         jwtConfig,
         emailConfig,
         clientConfig,
+        storageConfig,
       ],
       validate: (configService: Record<string, unknown>) => {
         const typedConfigService = new TypedConfigService(
