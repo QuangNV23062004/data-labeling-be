@@ -177,6 +177,9 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
+      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
@@ -194,7 +197,7 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
       qb.leftJoinAndSelect('label.categories', 'category');
     }
 
-    return qb.where('labelPreset.id = :id', { id }).getOne();
+    return qb.andWhere('labelPreset.id = :id', { id }).getOne();
   }
 
   async FindByIds(
@@ -205,6 +208,9 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
+      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
@@ -221,7 +227,7 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
       qb.leftJoinAndSelect('label.categories', 'category');
     }
-    return qb.where('labelPreset.id IN (:...ids)', { ids }).getMany();
+    return qb.andWhere('labelPreset.id IN (:...ids)', { ids }).getMany();
   }
 
   async Update(

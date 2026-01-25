@@ -34,7 +34,7 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
       if (existingLabel) {
-        throw LabelException.LabelNameAlreadyExists;
+        throw LabelException.LABEL_NAME_ALREADY_EXISTED;
       }
 
       const labelCategory = await this.labelCategoryRepository.FindByIds(
@@ -44,7 +44,7 @@ export class LabelService extends BaseService {
       );
 
       if (labelCategory.length !== createLabelDto.categoryIds.length) {
-        throw LabelException.LabelCategoryNotFound;
+        throw LabelException.LABEL_CATEGORY_NOT_FOUND;
       }
 
       const label: LabelEntity = Object.assign(
@@ -69,7 +69,7 @@ export class LabelService extends BaseService {
     );
     const label = await this.labelRepository.FindById(id, includeDeletedSafe);
     if (!label) {
-      throw LabelException.LabelNotFound;
+      throw LabelException.LABEL_NOT_FOUND;
     }
     return label;
   }
@@ -111,7 +111,7 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
       if (!label) {
-        throw LabelException.LabelNotFound;
+        throw LabelException.LABEL_NOT_FOUND;
       }
 
       if (updateLabelDto.name && updateLabelDto.name !== label.name) {
@@ -123,7 +123,7 @@ export class LabelService extends BaseService {
         );
 
         if (existingLabel) {
-          throw LabelException.LabelNameAlreadyExists;
+          throw LabelException.LABEL_NAME_ALREADY_EXISTED;
         }
 
         label.name = updateLabelDto.name;
@@ -143,7 +143,7 @@ export class LabelService extends BaseService {
         );
 
         if (labelCategories.length !== updateLabelDto.categoryIds.length) {
-          throw LabelException.LabelCategoryNotFound;
+          throw LabelException.LABEL_CATEGORY_NOT_FOUND;
         }
         label.categories = labelCategories;
       }
@@ -177,11 +177,11 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
       if (!label) {
-        throw LabelException.LabelNotFound;
+        throw LabelException.LABEL_NOT_FOUND;
       }
 
       if (label.presets.length > 0) {
-        throw LabelException.LabelHasPresets;
+        throw LabelException.LABEL_HAS_PRESETS;
       }
 
       return await this.labelRepository.SoftDelete(
@@ -203,11 +203,11 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
       if (!label) {
-        throw LabelException.LabelNotFound;
+        throw LabelException.LABEL_NOT_FOUND;
       }
 
       if (label.categories.find((cat) => cat.isDeleted === true)) {
-        throw LabelException.LabelCategoryIsDeleted;
+        throw LabelException.LABEL_CATEGORY_IS_DELETED;
       }
 
       return await this.labelRepository.Restore(id, transactionalEntityManager);
@@ -226,11 +226,11 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
       if (!label) {
-        throw LabelException.LabelNotFound;
+        throw LabelException.LABEL_NOT_FOUND;
       }
 
       if (label.presets.length > 0) {
-        throw LabelException.LabelHasPresetsIncludeSoftDeleted;
+        throw LabelException.LABEL_HAS_PRESETS_INCLUDED_SOFT_DELETED;
       }
 
       return await this.labelRepository.HardDelete(

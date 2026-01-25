@@ -32,7 +32,7 @@ export class LabelPresetService extends BaseService {
         transactionalEntityManager,
       );
       if (existingLabelPreset) {
-        throw LabelPresetExceptions.LabelPresetNameAlreadyExists;
+        throw LabelPresetExceptions.LABEL_PRESET_NAME_ALREADY_EXISTED;
       }
 
       const labelPresetEntity: LabelPresetEntity =
@@ -44,7 +44,7 @@ export class LabelPresetService extends BaseService {
         transactionalEntityManager,
       );
       if (labels.length !== labelPresetDto.labelIds.length) {
-        throw LabelPresetExceptions.LabelNotFound;
+        throw LabelPresetExceptions.LABEL_NOT_FOUND;
       }
       labelPresetEntity.labels = labels;
       labelPresetEntity.createdById = accountInfo?.sub as string;
@@ -99,7 +99,7 @@ export class LabelPresetService extends BaseService {
       safeIncludeDeleted,
     );
     if (!result) {
-      throw LabelPresetExceptions.LabelPresetNotFound;
+      throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
     }
     return result;
   }
@@ -118,7 +118,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LabelPresetNotFound;
+        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
       }
 
       const oldLabels = result.labels.map((label) => label.id);
@@ -137,7 +137,7 @@ export class LabelPresetService extends BaseService {
           transactionalEntityManager,
         );
         if (labels.length !== labelPresetDto.labelIds!.length) {
-          throw LabelPresetExceptions.LabelNotFound;
+          throw LabelPresetExceptions.LABEL_NOT_FOUND;
         }
         updatedLabelPreset.labels = labels;
       }
@@ -159,7 +159,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LabelPresetNotFound;
+        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
       }
 
       return await this.labelPresetRepository.SoftDelete(
@@ -179,11 +179,11 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LabelPresetNotFound;
+        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
       }
 
       if (result.labels.find((label) => label.isDeleted === true)) {
-        throw LabelPresetExceptions.LabelPresetStillHasDeletedLabel;
+        throw LabelPresetExceptions.LABEL_PRESET_STILL_HAS_INCLUDE_DELETED_LABELS;
       }
       return await this.labelPresetRepository.Restore(
         id,
@@ -202,7 +202,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LabelPresetNotFound;
+        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
       }
 
       return await this.labelPresetRepository.HardDelete(

@@ -2,6 +2,7 @@ import { HttpStatus, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { TypedConfigModule } from './common/typed-config/typed-config.module';
 import { TypedConfigService } from './common/typed-config/typed-config.service';
@@ -61,6 +62,7 @@ import { LabelPresetModule } from './modules/label-preset/label-preset.module';
     }),
 
     StorageModule,
+    ScheduleModule.forRoot(),
     //db module
     DatabaseModule.forRoot(),
 
