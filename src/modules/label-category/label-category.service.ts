@@ -31,7 +31,7 @@ export class LabelCategoryService extends BaseService {
           transactionalEntityManager,
         );
       if (existingLabelCategory) {
-        throw LabelCategoryException.LabelCategoryNameAlreadyExists;
+        throw LabelCategoryException.LABEL_CATEGORY_NAME_ALREADY_EXISTED;
       }
 
       const newLabelCategory: LabelCategoryEntity = Object.assign(
@@ -61,7 +61,7 @@ export class LabelCategoryService extends BaseService {
       safeIncludedDeleted,
     );
     if (!labelCategory) {
-      throw LabelCategoryException.LabelCategoryNotFound;
+      throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
     }
     return labelCategory;
   }
@@ -107,7 +107,7 @@ export class LabelCategoryService extends BaseService {
       );
 
       if (!labelCategory) {
-        throw LabelCategoryException.LabelCategoryNotFound;
+        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
       }
 
       if (
@@ -125,7 +125,7 @@ export class LabelCategoryService extends BaseService {
           transactionalEntityManager,
         );
       if (existingLabelCategory) {
-        throw LabelCategoryException.LabelCategoryNameAlreadyExists;
+        throw LabelCategoryException.LABEL_CATEGORY_NAME_ALREADY_EXISTED;
       }
 
       if (
@@ -153,8 +153,13 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LabelCategoryNotFound;
+        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
       }
+
+      if (labelCategory.labels.length > 0) {
+        throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_LABELS;
+      }
+
       return this.labelCategoryRepository.SoftDelete(
         id,
         transactionalEntityManager,
@@ -174,7 +179,7 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LabelCategoryNotFound;
+        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
       }
 
       return this.labelCategoryRepository.Restore(
@@ -196,7 +201,14 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LabelCategoryNotFound;
+        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+      }
+
+      if (labelCategory.labels.length > 0) {
+        if (labelCategory.labels.every((label) => label.isDeleted)) {
+          throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_INCLUDE_DELETED_LABEL;
+        }
+        throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_LABELS;
       }
 
       return this.labelCategoryRepository.HardDelete(

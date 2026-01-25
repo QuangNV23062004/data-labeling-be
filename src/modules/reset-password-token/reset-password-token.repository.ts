@@ -1,28 +1,24 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Condition, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  Condition,
+  FindOptionsWhere,
+  LessThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { ResetPasswordTokenEntity } from './reset-password-token.entity';
 import { EntityManager } from 'typeorm';
 import {
   WhereClause,
   WhereClauseCondition,
 } from 'typeorm/query-builder/WhereClause';
+import { BaseRepository } from 'src/common/repository/base.repository';
 
-export class ResetPasswordTokenRepository {
+export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTokenEntity> {
   constructor(
     @InjectRepository(ResetPasswordTokenEntity)
-    private readonly resetPasswordTokenRepository: Repository<ResetPasswordTokenEntity>,
-  ) {}
-
-  async GetEntityManager() {
-    return this.resetPasswordTokenRepository?.manager;
-  }
-
-  async GetRepository(entityManager?: EntityManager) {
-    if (entityManager) {
-      return entityManager.getRepository(ResetPasswordTokenEntity);
-    }
-
-    return this.resetPasswordTokenRepository;
+    repository: Repository<ResetPasswordTokenEntity>,
+  ) {
+    super(repository, ResetPasswordTokenEntity);
   }
 
   async Create(
@@ -85,6 +81,15 @@ export class ResetPasswordTokenRepository {
   ): Promise<void> {
     const repository = await this.GetRepository(entityManager);
     await repository.update(where, updateData);
+  }
+
+  async DeleteExpiredTokens(entityManager?: EntityManager): Promise<number> {
+    const repository = await this.GetRepository(entityManager);
+    const result = await repository.delete({
+      expiresAt: LessThanOrEqual(new Date()),
+      isDeleted: false,
+    });
+    return (result?.affected as number) || 0;
   }
 
   async FindActiveTokenByAccountId(

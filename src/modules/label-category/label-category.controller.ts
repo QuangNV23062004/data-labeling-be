@@ -96,7 +96,7 @@ export class LabelCategoryController {
   async FindPaginated(
     @Req() req: IAuthenticatedRequest,
     @Query() query: FilterLabelCategoryDto,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
   ) {
     return await this.labelCategoryService.FindPaginated(
       query,
@@ -124,7 +124,7 @@ export class LabelCategoryController {
   async FindAll(
     @Req() req: IAuthenticatedRequest,
     @Query() query: FilterLabelCategoryDto,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
   ) {
     return await this.labelCategoryService.FindAll(
       query,
@@ -153,7 +153,7 @@ export class LabelCategoryController {
   async FindById(
     @Param('id') id: string,
     @Req() req: IAuthenticatedRequest,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
   ) {
     return await this.labelCategoryService.FindById(
       id,

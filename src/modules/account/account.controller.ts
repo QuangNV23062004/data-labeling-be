@@ -61,7 +61,7 @@ export class AccountController {
   @Get('all')
   async FindAll(
     @Req() request: IAuthenticatedRequest,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
     @Query() filterAccountDto?: FilterAccountDto,
   ) {
     return await this.accountService.FindAll(
@@ -84,7 +84,7 @@ export class AccountController {
   @Get()
   async FindPaginated(
     @Req() request: IAuthenticatedRequest,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
     @Query() filterAccountDto?: FilterAccountDto,
   ) {
     return await this.accountService.FindPaginated(
@@ -109,7 +109,7 @@ export class AccountController {
   async FindById(
     @Param('id') id: string,
     @Req() request: IAuthenticatedRequest,
-    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('includeDeleted') includeDeleted: boolean = false,
   ) {
     return await this.accountService.FindById(
       id,
