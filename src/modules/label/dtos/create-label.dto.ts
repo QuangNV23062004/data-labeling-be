@@ -5,11 +5,13 @@ export class CreateLabelDto {
   @ApiPropertyOptional({ description: 'Label name', example: 'Urgent' })
   @IsString()
   name: string;
+
   @ApiPropertyOptional({
     description: 'Label description',
     example: 'Tasks that need immediate attention',
     required: false,
   })
+  @IsOptional()
   @IsString()
   description?: string;
   @ApiPropertyOptional({

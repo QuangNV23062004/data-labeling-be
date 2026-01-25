@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateLabelCategoryDto } from './create-label-category.dto';
 

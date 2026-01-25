@@ -10,4 +10,14 @@ export const LabelCategoryException = {
     'Label category name already exists',
     HttpStatus.BAD_REQUEST,
   ),
+
+  LabelCategoryStillHasLabels: new HttpException(
+    'Label category still has labels',
+    HttpStatus.BAD_REQUEST,
+  ),
+
+  LabelCategoryStillHasDeletedLabels: new HttpException(
+    'Label category still has labels (including soft-deleted ones). Please hard-delete them first.',
+    HttpStatus.BAD_REQUEST,
+  ),
 };

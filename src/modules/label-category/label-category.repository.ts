@@ -34,13 +34,25 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     entityManager?: EntityManager,
   ): Promise<LabelCategoryEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    const where: any = { id: id };
+    const qb = repository.createQueryBuilder('label_category');
+
+    qb.where('label_category.id = :id', { id });
+
     if (!includeDeleted) {
-      return repository.findOne({
-        where: { ...where, isDeleted: false },
+      qb.andWhere('label_category.isDeleted = :isDeleted', {
+        isDeleted: false,
       });
+      qb.leftJoinAndSelect(
+        'label_category.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('label_category.labels', 'label');
     }
-    return repository.findOne({ where: where });
+
+    return qb.getOne();
   }
 
   async FindByIds(
@@ -49,11 +61,25 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     entityManager?: EntityManager,
   ): Promise<LabelCategoryEntity[]> {
     const repository = await this.GetRepository(entityManager);
-    const where: any = { id: In(ids) };
+    const qb = repository.createQueryBuilder('label_category');
+
+    qb.where('label_category.id IN (:...ids)', { ids });
+
     if (!includeDeleted) {
-      return repository.find({ where: { ...where, isDeleted: false } });
+      qb.andWhere('label_category.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
+      qb.leftJoinAndSelect(
+        'label_category.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('label_category.labels', 'label');
     }
-    return repository.find({ where: where });
+
+    return qb.getMany();
   }
 
   async FindAll(
@@ -79,9 +105,18 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
         query.order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC',
       );
     }
-
     if (!includeDeleted) {
-      qb.where('label_category.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label_category.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
+      qb.leftJoinAndSelect(
+        'label_category.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('label_category.labels', 'label');
     }
 
     return qb.getMany();
@@ -94,14 +129,31 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     entityManager?: EntityManager,
   ): Promise<LabelCategoryEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    let where: any = { name: ILike(`%${unaccent(name)}%`) };
-    if (!includeDeleted) {
-      where = { ...where, isDeleted: false };
-    }
+    const qb = repository.createQueryBuilder('label_category');
+
+    qb.where('label_category.name ILIKE :name', {
+      name: `%${unaccent(name)}%`,
+    });
+
     if (excludeId) {
-      where = { ...where, id: Not(excludeId) };
+      qb.andWhere('label_category.id != :excludeId', { excludeId });
     }
-    return repository.findOne({ where: where });
+
+    if (!includeDeleted) {
+      qb.andWhere('label_category.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
+      qb.leftJoinAndSelect(
+        'label_category.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('label_category.labels', 'label');
+    }
+
+    return qb.getOne();
   }
 
   async FindPaginated(
@@ -127,9 +179,18 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
         query.order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC',
       );
     }
-
     if (!includeDeleted) {
-      qb.where('label_category.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label_category.isDeleted = :isDeleted', {
+        isDeleted: false,
+      });
+      qb.leftJoinAndSelect(
+        'label_category.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('label_category.labels', 'label');
     }
 
     const totalItems = await qb.getCount();

@@ -25,13 +25,13 @@ export class LabelPresetService extends BaseService {
   ) {
     const em = await this.labelPresetRepository.GetEntityManager();
     return em.transaction(async (transactionalEntityManager) => {
-      const existingEm = await this.labelPresetRepository.FindByName(
+      const existingLabelPreset = await this.labelPresetRepository.FindByName(
         labelPresetDto.name,
         false,
         undefined,
         transactionalEntityManager,
       );
-      if (existingEm) {
+      if (existingLabelPreset) {
         throw LabelPresetExceptions.LabelPresetNameAlreadyExists;
       }
 
@@ -124,13 +124,19 @@ export class LabelPresetService extends BaseService {
       const oldLabels = result.labels.map((label) => label.id);
       const updatedLabelPreset = Object.assign(result, labelPresetDto);
 
-      if (labelPresetDto?.labelIds && oldLabels !== labelPresetDto?.labelIds) {
+      // Check if labelIds have actually changed by comparing array contents
+      const labelsHaveChanged =
+        labelPresetDto?.labelIds &&
+        (oldLabels.length !== labelPresetDto.labelIds.length ||
+          !oldLabels.every((id) => labelPresetDto.labelIds!.includes(id)));
+
+      if (labelsHaveChanged) {
         const labels = await this.labelRepository.FindByIds(
-          labelPresetDto.labelIds,
+          labelPresetDto.labelIds!,
           false,
           transactionalEntityManager,
         );
-        if (labels.length !== labelPresetDto.labelIds.length) {
+        if (labels.length !== labelPresetDto.labelIds!.length) {
           throw LabelPresetExceptions.LabelNotFound;
         }
         updatedLabelPreset.labels = labels;
@@ -176,6 +182,9 @@ export class LabelPresetService extends BaseService {
         throw LabelPresetExceptions.LabelPresetNotFound;
       }
 
+      if (result.labels.find((label) => label.isDeleted === true)) {
+        throw LabelPresetExceptions.LabelPresetStillHasDeletedLabel;
+      }
       return await this.labelPresetRepository.Restore(
         id,
         transactionalEntityManager,
@@ -188,7 +197,7 @@ export class LabelPresetService extends BaseService {
     return (await em).transaction(async (transactionalEntityManager) => {
       const result = await this.labelPresetRepository.FindById(
         id,
-        false,
+        true,
         transactionalEntityManager,
       );
 

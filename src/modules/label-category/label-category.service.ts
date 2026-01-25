@@ -155,6 +155,11 @@ export class LabelCategoryService extends BaseService {
       if (!labelCategory) {
         throw LabelCategoryException.LabelCategoryNotFound;
       }
+
+      if (labelCategory.labels.length > 0) {
+        throw LabelCategoryException.LabelCategoryStillHasLabels;
+      }
+
       return this.labelCategoryRepository.SoftDelete(
         id,
         transactionalEntityManager,
@@ -197,6 +202,13 @@ export class LabelCategoryService extends BaseService {
       );
       if (!labelCategory) {
         throw LabelCategoryException.LabelCategoryNotFound;
+      }
+
+      if (labelCategory.labels.length > 0) {
+        if (labelCategory.labels.every((label) => label.isDeleted)) {
+          throw LabelCategoryException.LabelCategoryStillHasDeletedLabels;
+        }
+        throw LabelCategoryException.LabelCategoryStillHasLabels;
       }
 
       return this.labelCategoryRepository.HardDelete(

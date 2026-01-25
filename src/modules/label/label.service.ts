@@ -179,6 +179,11 @@ export class LabelService extends BaseService {
       if (!label) {
         throw LabelException.LabelNotFound;
       }
+
+      if (label.presets.length > 0) {
+        throw LabelException.LabelHasPresets;
+      }
+
       return await this.labelRepository.SoftDelete(
         id,
         transactionalEntityManager,
@@ -201,6 +206,10 @@ export class LabelService extends BaseService {
         throw LabelException.LabelNotFound;
       }
 
+      if (label.categories.find((cat) => cat.isDeleted === true)) {
+        throw LabelException.LabelCategoryIsDeleted;
+      }
+
       return await this.labelRepository.Restore(id, transactionalEntityManager);
     });
   }
@@ -218,6 +227,10 @@ export class LabelService extends BaseService {
       );
       if (!label) {
         throw LabelException.LabelNotFound;
+      }
+
+      if (label.presets.length > 0) {
+        throw LabelException.LabelHasPresetsIncludeSoftDeleted;
       }
 
       return await this.labelRepository.HardDelete(

@@ -99,7 +99,7 @@ export class Create${capitalizedName}Dto {
     createDtoContent,
   );
 
-  const updateDtoContent = `import { PartialType } from '@nestjs/mapped-types';
+  const updateDtoContent = `import { PartialType } from '@nestjs/swagger';
 import { Create${capitalizedName}Dto } from './create-${moduleName}.dto';
 
 export class Update${capitalizedName}Dto extends PartialType(Create${capitalizedName}Dto) {}

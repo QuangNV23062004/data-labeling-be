@@ -23,14 +23,30 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     entityManager?: EntityManager,
   ): Promise<LabelPresetEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    let where: any = { name: ILike(`%${unaccent(name)}%`) };
+    const qb = repository.createQueryBuilder('labelPreset');
+    qb.where('labelPreset.name ILIKE :name', { name: `%${unaccent(name)}%` });
     if (!includeDeleted) {
-      where = { ...where, isDeleted: false };
+      qb.andWhere('labelPreset.isDeleted = :isDeleted', { isDeleted: false });
+      qb.leftJoinAndSelect(
+        'labelPreset.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'category',
+        'category.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('labelPreset.labels', 'label');
+      qb.leftJoinAndSelect('label.categories', 'category');
     }
     if (excludeId) {
-      where = { ...where, id: Not(excludeId) };
+      qb.andWhere('labelPreset.id != :excludeId', { excludeId });
     }
-    return repository.findOne({ where: where });
+    return qb.getOne();
   }
 
   async Create(labelPreset: LabelPresetEntity, entityManager?: EntityManager) {
@@ -47,10 +63,6 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
 
     const qb = repository.createQueryBuilder('labelPreset');
 
-    // Join relations first so they can be used in WHERE clauses
-    qb.leftJoinAndSelect('labelPreset.labels', 'label');
-    qb.leftJoinAndSelect('label.categories', 'categories');
-
     if (query?.search && query?.searchBy) {
       qb.andWhere(`labelPreset.${query.searchBy} ILIKE :search`, {
         search: `%${query.search}%`,
@@ -70,6 +82,21 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
       qb.andWhere('labelPreset.isDeleted = :isDeleted', {
         isDeleted: false,
       });
+      qb.leftJoinAndSelect(
+        'labelPreset.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'category',
+        'category.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('labelPreset.labels', 'label');
+      qb.leftJoinAndSelect('label.categories', 'category');
     }
 
     return qb.getMany();
@@ -84,10 +111,6 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
 
     const qb = repository.createQueryBuilder('labelPreset');
 
-    // Join relations first so they can be used in WHERE clauses
-    qb.leftJoinAndSelect('labelPreset.labels', 'label');
-    qb.leftJoinAndSelect('label.categories', 'categories');
-
     if (query?.search && query?.searchBy) {
       qb.andWhere(`labelPreset.${query.searchBy} ILIKE :search`, {
         search: `%${query.search}%`,
@@ -107,6 +130,21 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
       qb.andWhere('labelPreset.isDeleted = :isDeleted', {
         isDeleted: false,
       });
+      qb.leftJoinAndSelect(
+        'labelPreset.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'category',
+        'category.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('labelPreset.labels', 'label');
+      qb.leftJoinAndSelect('label.categories', 'category');
     }
 
     const totalItems = await qb.getCount();
@@ -137,14 +175,26 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     entityManager?: EntityManager,
   ) {
     const repository = await this.GetRepository(entityManager);
-    let where: any = { id };
+    const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
-      where = { ...where, isDeleted: false };
+      qb.leftJoinAndSelect(
+        'labelPreset.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'category',
+        'category.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('labelPreset.labels', 'label');
+      qb.leftJoinAndSelect('label.categories', 'category');
     }
-    return repository.findOne({
-      where: where,
-      relations: ['labels', 'labels.categories'],
-    });
+
+    return qb.where('labelPreset.id = :id', { id }).getOne();
   }
 
   async FindByIds(
@@ -153,14 +203,25 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     entityManager?: EntityManager,
   ) {
     const repository = await this.GetRepository(entityManager);
-    let where: any = { id: In(ids) };
+    const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
-      where = { ...where, isDeleted: false };
+      qb.leftJoinAndSelect(
+        'labelPreset.labels',
+        'label',
+        'label.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'category',
+        'category.isDeleted = :isDeleted',
+        { isDeleted: false },
+      );
+    } else {
+      qb.leftJoinAndSelect('labelPreset.labels', 'label');
+      qb.leftJoinAndSelect('label.categories', 'category');
     }
-    return repository.find({
-      where: where,
-      relations: ['labels', 'labels.categories'],
-    });
+    return qb.where('labelPreset.id IN (:...ids)', { ids }).getMany();
   }
 
   async Update(

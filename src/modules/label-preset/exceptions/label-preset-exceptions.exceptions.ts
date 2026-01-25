@@ -10,4 +10,8 @@ export const LabelPresetExceptions = {
     HttpStatus.BAD_REQUEST,
   ),
   LabelNotFound: new HttpException('Label not found', HttpStatus.NOT_FOUND),
+  LabelPresetStillHasDeletedLabel: new HttpException(
+    'Label preset still has deleted label, please restore it first (if soft deleted)',
+    HttpStatus.BAD_REQUEST,
+  ),
 };
