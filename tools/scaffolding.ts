@@ -78,13 +78,12 @@ export class ${capitalizedName}Repository extends BaseRepository<${capitalizedNa
   // Create entity file
   console.log('Creating entity file...');
   const entityContent = `
+import { Entity } from 'typeorm';
 import { BaseEntity } from 'src/common/entity/base.entity';
-export class ${capitalizedName}Entity extends BaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
 
-  // Add your entity properties here
+@Entity('${moduleName}s')
+export class ${capitalizedName}Entity extends BaseEntity {
+  // Add your entity properties here with @Column decorators
 }
 `;
   fs.writeFileSync(`${moduleName}.entity.ts`, entityContent);

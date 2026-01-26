@@ -40,8 +40,6 @@ export class ProjectEntity extends BaseEntity {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: AccountEntity;
 
-  @OneToOne(() => ProjectConfigurationEntity, {
-    nullable: false,
-  })
+  @OneToOne(() => ProjectConfigurationEntity, (config) => config.project)
   projectConfiguration: ProjectConfigurationEntity;
 }

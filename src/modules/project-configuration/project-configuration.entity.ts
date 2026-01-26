@@ -23,10 +23,10 @@ export class ProjectConfigurationEntity extends BaseEntity {
   @JoinColumn({ name: 'project_id' })
   project: ProjectEntity;
 
-  @Column({ name: 'available_label_ids ', type: 'jsonb', nullable: false })
+  @Column({ name: 'available_label_ids', type: 'jsonb', nullable: false })
   availableLabelIds: string[];
 
-  @ManyToMany(() => LabelEntity, (label) => label.id)
+  @ManyToMany(() => LabelEntity)
   @JoinTable({
     name: 'project_configuration_labels',
     joinColumn: {

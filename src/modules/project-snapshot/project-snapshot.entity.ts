@@ -7,7 +7,7 @@ import { AccountEntity } from '../account/account.entity';
 @Index('idx_projectsnapshot_project_id', ['projectId'])
 @Index('idx_projectsnapshot_created_by_id', ['createdById'])
 export class ProjectSnapshotEntity extends BaseEntity {
-  @Column({ name: 'project_id', type: 'varchar', nullable: false })
+  @Column({ name: 'project_id', type: 'uuid', nullable: false })
   projectId: string;
 
   @ManyToOne(() => ProjectEntity, (project) => project.id)

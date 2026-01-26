@@ -5,7 +5,7 @@ import { ProjectEntity } from '../project/project.entity';
 @Entity({ name: 'project_instructions' })
 @Index('idx_projectinstruction_project_id', ['projectId'])
 export class ProjectInstructionEntity extends BaseEntity {
-  @Column({ name: 'project_id', type: 'varchar' })
+  @Column({ name: 'project_id', type: 'uuid' })
   projectId: string;
 
   @OneToOne(() => ProjectEntity, (project) => project.id)

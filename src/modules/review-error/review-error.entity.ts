@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/entity/base.entity';
-import { Column, Entity, Index, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { ReviewEntity } from '../review/review.entity';
 @Entity({ name: 'review_errors' })
 @Index('idx_reviewerror_review_id', ['reviewId'])
@@ -9,6 +9,7 @@ export class ReviewErrorEntity extends BaseEntity {
   reviewId: string;
 
   @ManyToOne(() => ReviewEntity, (review) => review.id)
+  @JoinColumn({ name: 'review_id' })
   review: ReviewEntity;
 
   @Column({ name: 'review_error_type_id', type: 'uuid', nullable: false })

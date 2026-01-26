@@ -19,7 +19,7 @@ import { ProjectTaskStatus } from './enums/task-status.enums';
 @Index('idx_projecttask_status', ['status'])
 @Index('idx_projecttask_assigned_by', ['assignedBy'])
 export class ProjectTaskEntity extends BaseEntity {
-  @Column({ name: 'project_id', type: 'varchar' })
+  @Column({ name: 'project_id', type: 'uuid' })
   projectId: string;
 
   @ManyToOne(() => ProjectEntity, (project) => project.id)

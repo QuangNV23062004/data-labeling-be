@@ -10,6 +10,7 @@ export class ReviewChecklistSubmissionEntity extends BaseEntity {
   reviewId: string;
 
   @ManyToOne(() => ReviewEntity, (review) => review.id)
+  @JoinColumn({ name: 'review_id' })
   review: ReviewEntity;
 
   @Column({ name: 'checklist_data', type: 'jsonb', nullable: false })

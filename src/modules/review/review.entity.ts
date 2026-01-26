@@ -20,14 +20,14 @@ export class ReviewEntity extends BaseEntity {
   @Column({ name: 'task_id', type: 'uuid', nullable: false })
   taskId: string;
 
-  @ManyToOne(() => ProjectTaskEntity, (task) => task.id)
+  @ManyToOne(() => ProjectTaskEntity)
   @JoinColumn({ name: 'task_id' })
   task: ProjectTaskEntity;
 
   @Column({ name: 'reviewer_id', type: 'uuid', nullable: false })
   reviewerId: string;
 
-  @ManyToOne(() => AccountEntity, (account) => account.id)
+  @ManyToOne(() => AccountEntity)
   @JoinColumn({ name: 'reviewer_id' })
   reviewer: AccountEntity;
 
