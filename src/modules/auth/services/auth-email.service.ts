@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt/dist/jwt.service';
+import { JwtService } from '@nestjs/jwt';
 import * as ejs from 'ejs';
 import { TypedConfigService } from 'src/common/typed-config/typed-config.service';
 import { MailerService } from '@nestjs-modules/mailer';

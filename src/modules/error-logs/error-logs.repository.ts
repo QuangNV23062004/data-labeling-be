@@ -40,3 +40,4 @@ export class ErrorLogRepository {
       .catch((err) => console.error('Failed to save error log:', err));
   }
 }
+//TODO: may be add apis and for admin to actually see requests, debatable...

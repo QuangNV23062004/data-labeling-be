@@ -9,6 +9,7 @@ import { EntityManager } from 'typeorm/entity-manager/EntityManager';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from './enums/role.enum';
 import { BaseRepository } from 'src/common/repository/base.repository';
+import { IsNull } from 'typeorm';
 
 @Injectable()
 export class AccountRepository extends BaseRepository<AccountEntity> {
@@ -36,7 +37,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
     const where: FindOptionsWhere<AccountEntity> = { id: id };
     if (!includeDeleted) {
       return repository.findOne({
-        where: { ...where, isDeleted: false },
+        where: { ...where, deletedAt: IsNull() },
       });
     }
 
@@ -70,7 +71,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
       qb.orderBy(orderField, query.order as 'ASC' | 'DESC');
     }
     if (!includeDeleted) {
-      qb.andWhere('account.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('account.deletedAt IS NULL');
     }
 
     return qb.getMany();
@@ -102,7 +103,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('account.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('account.deletedAt IS NULL');
     }
 
     const totalItems = await qb.getCount();
@@ -136,7 +137,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
     const where: FindOptionsWhere<AccountEntity> = { email: email };
     if (!includeDeleted) {
       return repository.findOne({
-        where: { ...where, isDeleted: false },
+        where: { ...where, deletedAt: IsNull() },
       });
     }
 
@@ -156,7 +157,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
     entityManager?: EntityManager,
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: true });
+    const result = await repository.update(id, { deletedAt: new Date() });
     return (result?.affected ?? 0) > 0;
   }
 
@@ -171,7 +172,7 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: false });
+    const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
   }
 }

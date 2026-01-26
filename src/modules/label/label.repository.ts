@@ -35,18 +35,16 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('label.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label.categories',
         'labelCategory',
-        'labelCategory.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'labelCategory.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.presets',
         'preset',
-        'preset.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'preset.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label.categories', 'labelCategory');
@@ -73,18 +71,16 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
 
     qb.where('label.id = :id', { id });
     if (!includeDeleted) {
-      qb.andWhere('label.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label.categories',
         'labelCategory',
-        'labelCategory.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'labelCategory.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.presets',
         'preset',
-        'preset.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'preset.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label.categories', 'labelCategory');
@@ -102,18 +98,16 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     const qb = repository.createQueryBuilder('label');
     qb.where('label.id IN (:...ids)', { ids });
     if (!includeDeleted) {
-      qb.andWhere('label.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label.categories',
         'labelCategory',
-        'labelCategory.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'labelCategory.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.presets',
         'preset',
-        'preset.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'preset.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label.categories', 'labelCategory');
@@ -143,18 +137,16 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('label.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label.categories',
         'labelCategory',
-        'labelCategory.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'labelCategory.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.presets',
         'preset',
-        'preset.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'preset.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label.categories', 'labelCategory');
@@ -166,8 +158,7 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
       const params: any = { categoryIds: query.categoryIds };
 
       if (!includeDeleted) {
-        condition += ' AND category.isDeleted = :catIsDeleted';
-        params.catIsDeleted = false;
+        condition += ' AND category.deletedAt IS NULL';
       }
       qb.innerJoin('label.categories', 'category', condition, params);
     }
@@ -196,18 +187,16 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('label.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('label.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label.categories',
         'labelCategory',
-        'labelCategory.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'labelCategory.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.presets',
         'preset',
-        'preset.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'preset.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label.categories', 'labelCategory');
@@ -219,8 +208,7 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
       const params: any = { categoryIds: query.categoryIds };
 
       if (!includeDeleted) {
-        condition += ' AND category.isDeleted = :catIsDeleted';
-        params.catIsDeleted = false;
+        condition += ' AND category.deletedAt IS NULL';
       }
       qb.innerJoin('label.categories', 'category', condition, params);
     }
@@ -260,13 +248,13 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     entityManager?: EntityManager,
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: true });
+    const result = await repository.update(id, { deletedAt: new Date() });
     return (result?.affected ?? 0) > 0;
   }
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: false });
+    const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
   }
 

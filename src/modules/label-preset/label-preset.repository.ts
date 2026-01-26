@@ -26,18 +26,16 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const qb = repository.createQueryBuilder('labelPreset');
     qb.where('labelPreset.name ILIKE :name', { name: `%${unaccent(name)}%` });
     if (!includeDeleted) {
-      qb.andWhere('labelPreset.isDeleted = :isDeleted', { isDeleted: false });
+      qb.andWhere('labelPreset.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.categories',
         'category',
-        'category.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'category.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
@@ -79,20 +77,16 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('labelPreset.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.categories',
         'category',
-        'category.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'category.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
@@ -127,20 +121,16 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     }
 
     if (!includeDeleted) {
-      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('labelPreset.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.categories',
         'category',
-        'category.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'category.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
@@ -177,20 +167,16 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
-      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('labelPreset.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.categories',
         'category',
-        'category.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'category.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
@@ -208,20 +194,16 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
-      qb.andWhere('labelPreset.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('labelPreset.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'labelPreset.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
         'label.categories',
         'category',
-        'category.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'category.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
@@ -243,13 +225,13 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     entityManager?: EntityManager,
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: true });
+    const result = await repository.update(id, { deletedAt: new Date() });
     return (result?.affected as number) > 0;
   }
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: false });
+    const result = await repository.update(id, { deletedAt: null });
     return (result?.affected as number) > 0;
   }
 

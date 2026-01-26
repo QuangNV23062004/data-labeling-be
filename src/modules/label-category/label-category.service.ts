@@ -205,7 +205,7 @@ export class LabelCategoryService extends BaseService {
       }
 
       if (labelCategory.labels.length > 0) {
-        if (labelCategory.labels.every((label) => label.isDeleted)) {
+        if (labelCategory.labels.every((label) => label.deletedAt !== null)) {
           throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_INCLUDE_DELETED_LABEL;
         }
         throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_LABELS;

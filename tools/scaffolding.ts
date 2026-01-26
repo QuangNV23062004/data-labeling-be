@@ -61,22 +61,29 @@ try {
   // Create repository file
   console.log('Creating repository file...');
   const repositoryContent = `import { Injectable } from '@nestjs/common';
-
+import { BaseRepository } from 'src/common/repository/base.repository';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ${capitalizedName}Entity } from './${moduleName}.entity';
 @Injectable()
-export class ${capitalizedName}Repository {
-  // Add your repository methods here
+export class ${capitalizedName}Repository extends BaseRepository<${capitalizedName}Entity> {
+  constructor(@InjectRepository(${capitalizedName}Entity)
+      repository: Repository<${capitalizedName}Entity>,) {
+    super(repository, ${capitalizedName}Entity);
+  }
 }
 `;
   fs.writeFileSync(`${moduleName}.repository.ts`, repositoryContent);
 
   // Create entity file
   console.log('Creating entity file...');
-  const entityContent = `export class ${capitalizedName}Entity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  const entityContent = `
+import { Entity } from 'typeorm';
+import { BaseEntity } from 'src/common/entity/base.entity';
 
-  // Add your entity properties here
+@Entity('${moduleName}s')
+export class ${capitalizedName}Entity extends BaseEntity {
+  // Add your entity properties here with @Column decorators
 }
 `;
   fs.writeFileSync(`${moduleName}.entity.ts`, entityContent);

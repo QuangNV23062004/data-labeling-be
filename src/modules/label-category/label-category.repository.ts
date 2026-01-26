@@ -39,14 +39,11 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     qb.where('label_category.id = :id', { id });
 
     if (!includeDeleted) {
-      qb.andWhere('label_category.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('label_category.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label_category.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label_category.labels', 'label');
@@ -66,14 +63,11 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     qb.where('label_category.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {
-      qb.andWhere('label_category.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('label_category.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label_category.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label_category.labels', 'label');
@@ -106,14 +100,11 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
       );
     }
     if (!includeDeleted) {
-      qb.andWhere('label_category.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('label_category.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label_category.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label_category.labels', 'label');
@@ -140,14 +131,11 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     }
 
     if (!includeDeleted) {
-      qb.andWhere('label_category.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('label_category.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label_category.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label_category.labels', 'label');
@@ -180,14 +168,11 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
       );
     }
     if (!includeDeleted) {
-      qb.andWhere('label_category.isDeleted = :isDeleted', {
-        isDeleted: false,
-      });
+      qb.andWhere('label_category.deletedAt IS NULL');
       qb.leftJoinAndSelect(
         'label_category.labels',
         'label',
-        'label.isDeleted = :isDeleted',
-        { isDeleted: false },
+        'label.deletedAt IS NULL',
       );
     } else {
       qb.leftJoinAndSelect('label_category.labels', 'label');
@@ -228,7 +213,7 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     entityManager?: EntityManager,
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: true });
+    const result = await repository.update(id, { deletedAt: new Date() });
     return (result?.affected ?? 0) > 0;
   }
 
@@ -243,7 +228,7 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
 
   async Restore(id: string, entityManager?: EntityManager): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: false });
+    const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
   }
 }

@@ -182,7 +182,7 @@ export class LabelPresetService extends BaseService {
         throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
       }
 
-      if (result.labels.find((label) => label.isDeleted === true)) {
+      if (result.labels.find((label) => label.deletedAt !== null)) {
         throw LabelPresetExceptions.LABEL_PRESET_STILL_HAS_INCLUDE_DELETED_LABELS;
       }
       return await this.labelPresetRepository.Restore(
