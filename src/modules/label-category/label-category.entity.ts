@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/entity/base.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToMany,
   ManyToOne,
@@ -11,6 +12,8 @@ import { AccountEntity } from '../account/account.entity';
 import { LabelEntity } from '../label/label.entity';
 
 @Entity('label_categories')
+@Index('idx_labelcategory_name', ['name'])
+@Index('idx_labelcategory_created_by_id', ['createdById'])
 export class LabelCategoryEntity extends BaseEntity {
   @Column({ name: 'name', nullable: false })
   name: string;

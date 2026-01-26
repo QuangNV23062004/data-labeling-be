@@ -206,7 +206,7 @@ export class LabelService extends BaseService {
         throw LabelException.LABEL_NOT_FOUND;
       }
 
-      if (label.categories.find((cat) => cat.isDeleted === true)) {
+      if (label.categories.find((cat) => cat.deletedAt !== null)) {
         throw LabelException.LABEL_CATEGORY_IS_DELETED;
       }
 

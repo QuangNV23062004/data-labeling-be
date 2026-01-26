@@ -4,6 +4,7 @@ import {
   FindOptionsWhere,
   LessThanOrEqual,
   Repository,
+  IsNull,
 } from 'typeorm';
 import { ResetPasswordTokenEntity } from './reset-password-token.entity';
 import { EntityManager } from 'typeorm';
@@ -36,11 +37,11 @@ export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTo
     entityManager?: EntityManager,
   ): Promise<ResetPasswordTokenEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    const where = { id: id };
+    const where: any = { id: id };
     if (includeDeleted) {
       return repository.findOne({ where: where });
     }
-    return repository.findOne({ where: { ...where, isDeleted: false } });
+    return repository.findOne({ where: { ...where, deletedAt: IsNull() } });
   }
 
   async SoftDelete(
@@ -48,7 +49,7 @@ export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTo
     entityManager?: EntityManager,
   ): Promise<boolean> {
     const repository = await this.GetRepository(entityManager);
-    const result = await repository.update(id, { isDeleted: true });
+    const result = await repository.update(id, { deletedAt: new Date() });
     return (result?.affected as number) > 0;
   }
 
@@ -63,7 +64,7 @@ export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTo
 
   async Restore(id: string, entityManager?: EntityManager): Promise<void> {
     const repository = await this.GetRepository(entityManager);
-    await repository.update(id, { isDeleted: false });
+    await repository.update(id, { deletedAt: null });
   }
 
   async Update(
@@ -87,7 +88,7 @@ export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTo
     const repository = await this.GetRepository(entityManager);
     const result = await repository.delete({
       expiresAt: LessThanOrEqual(new Date()),
-      isDeleted: false,
+      deletedAt: IsNull(),
     });
     return (result?.affected as number) || 0;
   }
@@ -101,7 +102,7 @@ export class ResetPasswordTokenRepository extends BaseRepository<ResetPasswordTo
       where: {
         accountId: accountId,
         usable: true,
-        isDeleted: false,
+        deletedAt: IsNull(),
       },
     });
   }
