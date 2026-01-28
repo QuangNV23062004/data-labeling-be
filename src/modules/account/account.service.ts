@@ -9,9 +9,13 @@ import { CreateAccountDto } from './dtos/create-account.dto';
 import { Status } from './enums/account-status.enum';
 import * as bcrypt from 'bcrypt';
 import { UpdateAccountDto } from './dtos/update-account.dto';
-import { AccountException } from './exceptions/account-exceptions.exceptions';
 import { AuthPasswordService } from '../auth/services/auth-password.service';
 import { BaseService } from 'src/common/service/base.service';
+import {
+  AccountNotFoundException,
+  EmailInUseException,
+  InsufficientPermissionException,
+} from './exceptions/account-exceptions.exceptions';
 
 @Injectable()
 export class AccountService extends BaseService {
@@ -38,7 +42,7 @@ export class AccountService extends BaseService {
       accountInfo?.role !== Role.ADMIN &&
       accountInfo?.role !== Role.MANAGER
     ) {
-      throw AccountException.INSUFFICIENT_PERMISSION;
+      throw new InsufficientPermissionException();
     }
   }
 
@@ -58,11 +62,11 @@ export class AccountService extends BaseService {
     );
 
     if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
 
     if (accountInfo?.role !== Role.ADMIN && account.role === Role.ADMIN) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
 
     return account;
@@ -122,37 +126,45 @@ export class AccountService extends BaseService {
     );
 
     if (accountInfo?.role !== Role.ADMIN && account?.role === Role.ADMIN) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
 
     if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
     return account;
   }
 
   async Create(account: CreateAccountDto): Promise<AccountEntity> {
-    const existingAccount = await this.accountRepository.FindByEmail(
-      account.email,
-      false,
-    );
+    const em = await this.accountRepository.GetEntityManager();
 
-    if (existingAccount) {
-      throw AccountException.EMAIL_IN_USE;
-    }
+    return em.transaction(async (transactionalEntityManager) => {
+      const existingAccount = await this.accountRepository.FindByEmail(
+        account.email,
+        false,
+        transactionalEntityManager,
+      );
 
-    const { hash, salt } =
-      await this.authPasswordService.hashPassword('123456');
+      if (existingAccount) {
+        throw new EmailInUseException();
+      }
 
-    const accountEntity: Partial<AccountEntity> = {
-      email: account.email,
-      username: account.username,
-      role: account.role,
-      passwordHash: hash,
-      passwordSalt: salt,
-      status: Status.NEED_CHANGE_PASSWORD,
-    };
-    return this.accountRepository.Create(accountEntity as AccountEntity);
+      const { hash, salt } =
+        await this.authPasswordService.hashPassword('123456');
+
+      const accountEntity: Partial<AccountEntity> = {
+        email: account.email,
+        username: account.username,
+        role: account.role,
+        passwordHash: hash,
+        passwordSalt: salt,
+        status: Status.NEED_CHANGE_PASSWORD,
+      };
+      return this.accountRepository.Create(
+        accountEntity as AccountEntity,
+        transactionalEntityManager,
+      );
+    });
   }
 
   async Update(
@@ -162,116 +174,173 @@ export class AccountService extends BaseService {
   ): Promise<AccountEntity> {
     this.checkPermission(id, accountInfo);
 
-    const account = await this.accountRepository.FindById(id, false);
+    const em = await this.accountRepository.GetEntityManager();
 
-    if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
-    }
+    return em.transaction(async (transactionalEntityManager) => {
+      const account = await this.accountRepository.FindById(
+        id,
+        false,
+        transactionalEntityManager,
+      );
 
-    // Prevent non-admins from updating admin accounts
-    if (accountInfo?.role !== Role.ADMIN && account.role === Role.ADMIN) {
-      throw AccountException.INSUFFICIENT_PERMISSION;
-    }
+      if (!account) {
+        throw new AccountNotFoundException();
+      }
 
-    if (updateAccountDto.email && updateAccountDto.email !== account.email) {
-      account.email = updateAccountDto.email;
-    }
+      // Prevent non-admins from updating admin accounts
+      if (accountInfo?.role !== Role.ADMIN && account.role === Role.ADMIN) {
+        throw new InsufficientPermissionException();
+      }
 
-    if (
-      updateAccountDto.username &&
-      updateAccountDto.username !== account.username
-    ) {
-      account.username = updateAccountDto.username;
-    }
+      if (updateAccountDto.email && updateAccountDto.email !== account.email) {
+        account.email = updateAccountDto.email;
+      }
 
-    if (updateAccountDto.role && accountInfo?.role !== Role.ADMIN) {
-      throw AccountException.INSUFFICIENT_PERMISSION;
-    }
+      if (
+        updateAccountDto.username &&
+        updateAccountDto.username !== account.username
+      ) {
+        account.username = updateAccountDto.username;
+      }
 
-    if (
-      updateAccountDto.role &&
-      updateAccountDto.role !== account.role &&
-      updateAccountDto.role !== account.role
-    ) {
-      account.role = updateAccountDto.role;
-    }
+      if (updateAccountDto.role && accountInfo?.role !== Role.ADMIN) {
+        throw new InsufficientPermissionException();
+      }
 
-    if (
-      updateAccountDto.status &&
-      updateAccountDto.status !== account.status &&
-      accountInfo?.role !== Role.ADMIN
-    ) {
-      throw AccountException.INSUFFICIENT_PERMISSION;
-    }
+      if (
+        updateAccountDto.role &&
+        updateAccountDto.role !== account.role &&
+        updateAccountDto.role !== account.role
+      ) {
+        account.role = updateAccountDto.role;
+      }
 
-    if (updateAccountDto.status && updateAccountDto.status !== account.status) {
-      account.status = updateAccountDto.status;
-    }
+      if (
+        updateAccountDto.status &&
+        updateAccountDto.status !== account.status &&
+        accountInfo?.role !== Role.ADMIN
+      ) {
+        throw new InsufficientPermissionException();
+      }
 
-    return this.accountRepository.Update(account);
+      if (
+        updateAccountDto.status &&
+        updateAccountDto.status !== account.status
+      ) {
+        account.status = updateAccountDto.status;
+      }
+
+      return this.accountRepository.Update(account, transactionalEntityManager);
+    });
   }
 
   async SoftDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {
     this.checkPermission(id, accountInfo);
 
-    const account = await this.accountRepository.FindById(id, false);
-    if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
-    }
+    const em = await this.accountRepository.GetEntityManager();
+    return em.transaction(async (transactionalEntityManager) => {
+      const account = await this.accountRepository.FindById(
+        id,
+        false,
+        transactionalEntityManager,
+      );
+      if (!account) {
+        throw new AccountNotFoundException();
+      }
 
-    return await this.accountRepository.SoftDelete(id);
+      return await this.accountRepository.SoftDelete(
+        id,
+        transactionalEntityManager,
+      );
+    });
   }
 
   async Restore(id: string, accountInfo?: AccountInfo): Promise<boolean> {
     this.checkPermission(id, accountInfo);
 
-    const account = await this.accountRepository.FindById(id, true);
+    const em = await this.accountRepository.GetEntityManager();
+    return em.transaction(async (transactionalEntityManager) => {
+      const account = await this.accountRepository.FindById(
+        id,
+        true,
+        transactionalEntityManager,
+      );
 
-    if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
-    }
+      if (!account) {
+        throw new AccountNotFoundException();
+      }
 
-    return await this.accountRepository.Restore(id);
+      return await this.accountRepository.Restore(
+        id,
+        transactionalEntityManager,
+      );
+    });
   }
 
   async HardDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {
     this.checkPermission(id, accountInfo);
-    const account = await this.accountRepository.FindById(id, true);
 
-    if (!account) {
-      throw AccountException.ACCOUNT_NOT_FOUND;
-    }
+    const em = await this.accountRepository.GetEntityManager();
+    return em.transaction(async (transactionalEntityManager) => {
+      const account = await this.accountRepository.FindById(
+        id,
+        true,
+        transactionalEntityManager,
+      );
 
-    return await this.accountRepository.HardDelete(id);
+      if (!account) {
+        throw new AccountNotFoundException();
+      }
+
+      return await this.accountRepository.HardDelete(
+        id,
+        transactionalEntityManager,
+      );
+    });
   }
 
   async BootstrapAdminAccount(): Promise<void> {
-    const users = await this.FindAll();
-    let createAdmin = false;
-    if (users.length === 0) {
-      createAdmin = true;
-    }
+    const em = await this.accountRepository.GetEntityManager();
 
-    if (users.find((user) => user.role === Role.ADMIN)) {
-      createAdmin = false;
-    }
-    if (createAdmin) {
-      const { hash, salt } =
-        await this.authPasswordService.hashPassword('123456');
+    return em.transaction(async (transactionalEntityManager) => {
+      const users = await this.accountRepository.FindAll(
+        false,
+        '',
+        [Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER],
+        undefined,
+        transactionalEntityManager,
+      );
 
-      const adminAccount: Partial<AccountEntity> = {
-        email: 'admin@example.com',
-        username: 'admin',
-        role: Role.ADMIN,
-        passwordHash: hash,
-        passwordSalt: salt,
-        status: Status.NEED_CHANGE_PASSWORD,
-      };
+      let createAdmin = false;
+      if (users.length === 0) {
+        createAdmin = true;
+      }
 
-      await this.accountRepository.Create(adminAccount as AccountEntity);
+      if (users.find((user) => user.role === Role.ADMIN)) {
+        createAdmin = false;
+      }
+
+      if (createAdmin) {
+        const { hash, salt } =
+          await this.authPasswordService.hashPassword('123456');
+
+        const adminAccount: Partial<AccountEntity> = {
+          email: 'admin@example.com',
+          username: 'admin',
+          role: Role.ADMIN,
+          passwordHash: hash,
+          passwordSalt: salt,
+          status: Status.NEED_CHANGE_PASSWORD,
+        };
+
+        await this.accountRepository.Create(
+          adminAccount as AccountEntity,
+          transactionalEntityManager,
+        );
+        return;
+      }
+
       return;
-    }
-
-    return;
+    });
   }
 }

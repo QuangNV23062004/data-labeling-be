@@ -3,7 +3,12 @@ import { LabelPresetRepository } from './label-preset.repository';
 import { CreateLabelPresetDto } from './dtos/create-label-preset.dto';
 import { AccountInfo } from 'src/interfaces/request';
 import { LabelPresetEntity } from './label-preset.entity';
-import { LabelPresetExceptions } from './exceptions/label-preset-exceptions.exceptions';
+import {
+  LabelPresetNotFoundException,
+  LabelPresetNameAlreadyExistsException,
+  LabelNotFoundException,
+  LabelPresetStillHasIncludeDeletedLabelsException,
+} from './exceptions/label-preset-exceptions.exceptions';
 import { BaseService } from 'src/common/service/base.service';
 import { FilterLabelPresetQueryDto } from './dtos/filter-label-preset-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
@@ -32,7 +37,7 @@ export class LabelPresetService extends BaseService {
         transactionalEntityManager,
       );
       if (existingLabelPreset) {
-        throw LabelPresetExceptions.LABEL_PRESET_NAME_ALREADY_EXISTED;
+        throw new LabelPresetNameAlreadyExistsException();
       }
 
       const labelPresetEntity: LabelPresetEntity =
@@ -44,7 +49,7 @@ export class LabelPresetService extends BaseService {
         transactionalEntityManager,
       );
       if (labels.length !== labelPresetDto.labelIds.length) {
-        throw LabelPresetExceptions.LABEL_NOT_FOUND;
+        throw new LabelNotFoundException();
       }
       labelPresetEntity.labels = labels;
       labelPresetEntity.createdById = accountInfo?.sub as string;
@@ -99,7 +104,7 @@ export class LabelPresetService extends BaseService {
       safeIncludeDeleted,
     );
     if (!result) {
-      throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
+      throw new LabelPresetNotFoundException();
     }
     return result;
   }
@@ -118,7 +123,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
+        throw new LabelPresetNotFoundException();
       }
 
       const oldLabels = result.labels.map((label) => label.id);
@@ -137,7 +142,7 @@ export class LabelPresetService extends BaseService {
           transactionalEntityManager,
         );
         if (labels.length !== labelPresetDto.labelIds!.length) {
-          throw LabelPresetExceptions.LABEL_NOT_FOUND;
+          throw new LabelNotFoundException();
         }
         updatedLabelPreset.labels = labels;
       }
@@ -159,7 +164,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
+        throw new LabelPresetNotFoundException();
       }
 
       return await this.labelPresetRepository.SoftDelete(
@@ -179,11 +184,11 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
+        throw new LabelPresetNotFoundException();
       }
 
       if (result.labels.find((label) => label.deletedAt !== null)) {
-        throw LabelPresetExceptions.LABEL_PRESET_STILL_HAS_INCLUDE_DELETED_LABELS;
+        throw new LabelPresetStillHasIncludeDeletedLabelsException();
       }
       return await this.labelPresetRepository.Restore(
         id,
@@ -202,7 +207,7 @@ export class LabelPresetService extends BaseService {
       );
 
       if (!result) {
-        throw LabelPresetExceptions.LABEL_PRESET_NOT_FOUND;
+        throw new LabelPresetNotFoundException();
       }
 
       return await this.labelPresetRepository.HardDelete(

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { AuthException } from '../exceptions/auth-exceptions.exceptions';
 import * as bcrypt from 'bcrypt';
+import { PasswordNotStrongEnoughException } from '../exceptions/auth-exceptions.exceptions';
 
 @Injectable()
 export class AuthPasswordService {
@@ -25,7 +25,7 @@ export class AuthPasswordService {
   ): Promise<void> {
     const passwordValid = await bcrypt.compare(plainPassword, hashedPassword);
     if (!passwordValid) {
-      throw AuthException.INVALID_PASSWORD;
+      throw new PasswordNotStrongEnoughException();
     }
   }
 
@@ -42,7 +42,7 @@ export class AuthPasswordService {
       !hasNumber ||
       !hasSpecialChar
     ) {
-      throw AuthException.PASSWORD_NOT_STRONG_ENOUGH;
+      throw new PasswordNotStrongEnoughException();
     }
   }
 }

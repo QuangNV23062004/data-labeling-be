@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as ejs from 'ejs';
 import { TypedConfigService } from 'src/common/typed-config/typed-config.service';
 import { MailerService } from '@nestjs-modules/mailer';
-import { AuthException } from '../exceptions/auth-exceptions.exceptions';
+import { FailedToSendResetPasswordEmailException } from '../exceptions/auth-exceptions.exceptions';
 
 @Injectable()
 export class AuthEmailService {
@@ -35,7 +35,7 @@ export class AuthEmailService {
       })
       .catch((error) => {
         // console.error('Failed to send reset password email:', error);
-        throw AuthException.FAILED_TO_SEND_RESET_PASSWORD_EMAIL;
+        throw new FailedToSendResetPasswordEmailException();
       });
   }
 }

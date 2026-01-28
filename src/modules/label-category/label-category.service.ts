@@ -3,7 +3,12 @@ import { LabelCategoryRepository } from './label-category.repository';
 import { CreateLabelCategoryDto } from './dtos/create-label-category.dto';
 import { LabelCategoryEntity } from './label-category.entity';
 import { AccountInfo } from 'src/interfaces/request';
-import { LabelCategoryException } from './exceptions/label-categories-exceptions.exceptions';
+import {
+  LabelCategoryNotFoundException,
+  LabelCategoryNameAlreadyExistsException,
+  LabelCategoryStillHasLabelsException,
+  LabelCategoryStillHasIncludeDeletedLabelException,
+} from './exceptions/label-categories-exceptions.exceptions';
 import { FilterLabelCategoryDto } from './dtos/filter-label-category.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { BaseService } from 'src/common/service/base.service';
@@ -31,7 +36,7 @@ export class LabelCategoryService extends BaseService {
           transactionalEntityManager,
         );
       if (existingLabelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NAME_ALREADY_EXISTED;
+        throw new LabelCategoryNameAlreadyExistsException();
       }
 
       const newLabelCategory: LabelCategoryEntity = Object.assign(
@@ -61,7 +66,7 @@ export class LabelCategoryService extends BaseService {
       safeIncludedDeleted,
     );
     if (!labelCategory) {
-      throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+      throw new LabelCategoryNotFoundException();
     }
     return labelCategory;
   }
@@ -107,7 +112,7 @@ export class LabelCategoryService extends BaseService {
       );
 
       if (!labelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+        throw new LabelCategoryNotFoundException();
       }
 
       if (
@@ -125,7 +130,7 @@ export class LabelCategoryService extends BaseService {
           transactionalEntityManager,
         );
       if (existingLabelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NAME_ALREADY_EXISTED;
+        throw new LabelCategoryNameAlreadyExistsException();
       }
 
       if (
@@ -153,11 +158,11 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+        throw new LabelCategoryNotFoundException();
       }
 
       if (labelCategory.labels.length > 0) {
-        throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_LABELS;
+        throw new LabelCategoryStillHasLabelsException();
       }
 
       return this.labelCategoryRepository.SoftDelete(
@@ -179,7 +184,7 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+        throw new LabelCategoryNotFoundException();
       }
 
       return this.labelCategoryRepository.Restore(
@@ -201,14 +206,14 @@ export class LabelCategoryService extends BaseService {
         transactionalEntityManager,
       );
       if (!labelCategory) {
-        throw LabelCategoryException.LABEL_CATEGORY_NOT_FOUND;
+        throw new LabelCategoryNotFoundException();
       }
 
       if (labelCategory.labels.length > 0) {
         if (labelCategory.labels.every((label) => label.deletedAt !== null)) {
-          throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_INCLUDE_DELETED_LABEL;
+          throw new LabelCategoryStillHasIncludeDeletedLabelException();
         }
-        throw LabelCategoryException.LABEL_CATEGORY_STILL_HAS_LABELS;
+        throw new LabelCategoryStillHasLabelsException();
       }
 
       return this.labelCategoryRepository.HardDelete(
