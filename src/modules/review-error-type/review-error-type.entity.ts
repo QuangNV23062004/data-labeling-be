@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/common/entity/base.entity';
 import { Column, Entity } from 'typeorm';
-import { Severity } from './enums/serverity.enums';
+import { Severity } from './enums/severity.enums';
 @Entity({ name: 'review_error_types' })
 export class ReviewErrorTypeEntity extends BaseEntity {
   @Column({ name: 'name', type: 'text', nullable: false })
