@@ -1,7 +1,7 @@
 import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class FilterReviewChecklistSubmissionQueryDto {
+export class FilterChecklistAnswerQueryDto {
   @IsOptional()
   @IsString()
   search?: string;

@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository, IsNull, Like } from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
+import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 
 @Injectable()
 export class ProjectRepository extends BaseRepository<ProjectEntity> {
@@ -16,7 +17,7 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
 
   async Create(
     project: ProjectEntity,
-    entityManager?: EntityManager
+    entityManager?: EntityManager,
   ): Promise<ProjectEntity> {
     const repository = await this.GetRepository(entityManager);
     return repository.save(project);
@@ -25,7 +26,7 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
   async FindById(
     id: string,
     includeDeleted: boolean = false,
-    entityManager?: EntityManager
+    entityManager?: EntityManager,
   ): Promise<ProjectEntity | null> {
     const repository = await this.GetRepository(entityManager);
     console.log(id);
@@ -38,53 +39,72 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
 
   async Update(
     project: ProjectEntity,
-    entityManager?: EntityManager
+    entityManager?: EntityManager,
   ): Promise<ProjectEntity> {
     const repository = await this.GetRepository(entityManager);
     return repository.save(project);
   }
 
-  async SoftDelete(
-    id: string,
-    entityManager?: EntityManager
-  ): Promise<void> {
+  async SoftDelete(id: string, entityManager?: EntityManager): Promise<void> {
     const repository = await this.GetRepository(entityManager);
-    await repository.update(id, {deletedAt : new Date()});
+    await repository.update(id, { deletedAt: new Date() });
   }
 
-  async Restore(
-    id: string,
-    entityManager?: EntityManager
-  ): Promise<void> {
+  async Restore(id: string, entityManager?: EntityManager): Promise<void> {
     const repository = await this.GetRepository(entityManager);
-    await repository.update(id, {deletedAt : null});
+    await repository.update(id, { deletedAt: null });
   }
 
   async FindPaginated(
-    query : FilterProjectQueryDto,
-    entityManager?: EntityManager
-  ): Promise<ProjectEntity[]> {
+    query: FilterProjectQueryDto,
+    entityManager?: EntityManager,
+  ): Promise<PaginationResultDto<ProjectEntity>> {
     const repository = await this.GetRepository(entityManager);
-    let page = query.page ? query.page : 1;
-    let limit = query.limit ? query.limit : 10;
-    
-    const whereCondition: any = {};
-    
-    if (!query.includeDeleted) {
-      whereCondition.deletedAt = IsNull();
+
+    const page = query?.page || 1;
+    const limit = query?.limit || 10;
+    const offset = (page - 1) * limit;
+
+    const qb = repository.createQueryBuilder('project');
+
+    if (query?.includeDeleted) {
+      qb.andWhere('project.deletedAt IS NOT NULL');
     }
-    
-    if (query.name) {
-      whereCondition.name = Like(`%${query.name}%`);
+
+    //old filter
+    if (query?.name) {
+      qb.andWhere('project.name ILIKE :name', { name: `%${query.name}%` });
     }
-    
-    return repository.find({
-      where: whereCondition,
-      skip: (page - 1) * limit,
-      take: limit,
-      order: {
-        name: query.order === 'DESC' ? 'DESC' : 'ASC',
-      },
-    });
+
+    if (query?.search) {
+      const searchBy = query.searchBy ? query.searchBy : 'name';
+      qb.andWhere(`project.${searchBy} ILIKE unaccent(:search)`, {
+        search: `%${query.search}%`,
+      });
+    }
+
+    if (query?.order) {
+      const orderDirection: 'ASC' | 'DESC' = (query?.order || 'ASC') as
+        | 'ASC'
+        | 'DESC';
+      qb.orderBy(`project.${query.orderBy}`, orderDirection);
+    }
+
+    const totalItems = await qb.getCount();
+
+    const items = await qb.skip(offset).take(limit).getMany();
+
+    return new PaginationResultDto<ProjectEntity>(
+      items,
+      Math.ceil(totalItems / limit),
+      page,
+      limit,
+      query?.search || '',
+      query?.searchBy || '',
+      query?.order || '',
+      query?.orderBy || '',
+      page < Math.ceil(totalItems / limit),
+      page > 1,
+    );
   }
 }

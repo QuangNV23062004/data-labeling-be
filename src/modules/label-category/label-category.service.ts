@@ -198,6 +198,8 @@ export class LabelCategoryService extends BaseService {
     id: string,
     accountInfo?: AccountInfo, //for validate later if needed
   ): Promise<boolean> {
+    this.validateAdminForHardDelete(accountInfo);
+
     const em = await this.labelCategoryRepository.GetEntityManager();
     return await em.transaction(async (transactionalEntityManager) => {
       const labelCategory = await this.labelCategoryRepository.FindById(

@@ -40,13 +40,11 @@ import { ProjectTaskModule } from './modules/project-task/project-task.module';
 import { ReviewModule } from './modules/review/review.module';
 import { ReviewErrorModule } from './modules/review-error/review-error.module';
 import { ReviewErrorTypeModule } from './modules/review-error-type/review-error-type.module';
-import { ReviewChecklistSubmissionModule } from './modules/review-checklist-submission/review-checklist-submission.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { DatasetModule } from './modules/dataset/dataset.module';
 import { ProjectSnapshotModule } from './modules/project-snapshot/project-snapshot.module';
 import { AccountRatingModule } from './modules/account-rating/account-rating.module';
 import { AccountRatingHistoryModule } from './modules/account-rating-history/account-rating-history.module';
-import { LabelChecklistQuestionAnswerModule } from './modules/label-checklist-question-answer/label-checklist-question-answer.module';
 
 @Module({
   imports: [
@@ -101,13 +99,11 @@ import { LabelChecklistQuestionAnswerModule } from './modules/label-checklist-qu
     ReviewModule,
     ReviewErrorModule,
     ReviewErrorTypeModule,
-    ReviewChecklistSubmissionModule,
     NotificationModule,
     DatasetModule,
     ProjectSnapshotModule,
     AccountRatingModule,
     AccountRatingHistoryModule,
-    LabelChecklistQuestionAnswerModule,
   ],
   controllers: [AppController],
   providers: [

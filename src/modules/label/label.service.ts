@@ -225,6 +225,8 @@ export class LabelService extends BaseService {
     id: string,
     accountInfo?: AccountInfo, // account info for validation, if needed
   ): Promise<boolean> {
+    this.validateAdminForHardDelete(accountInfo);
+
     const em = await this.labelRepository.GetEntityManager();
     return em.transaction(async (transactionalEntityManager) => {
       const label = await this.labelRepository.FindById(

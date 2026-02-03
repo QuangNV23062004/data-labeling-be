@@ -10,7 +10,6 @@ import {
 import { Role } from '../account/enums/role.enum';
 import { LabelEntity } from '../label/label.entity';
 import { AccountEntity } from '../account/account.entity';
-import { LabelChecklistQuestionAnswerEntity } from '../label-checklist-question-answer/label-checklist-question-answer.entity';
 
 @Entity('label_checklist_questions')
 @Index('idx_labelchecklistquestion_label_id', ['labelId'])
@@ -58,10 +57,4 @@ export class LabelChecklistQuestionEntity extends BaseEntity {
   })
   @JoinColumn({ name: 'created_by_id' })
   createdBy: AccountEntity;
-
-  @OneToMany(
-    () => LabelChecklistQuestionAnswerEntity,
-    (labelChecklistQuestionAnswer) => labelChecklistQuestionAnswer.question,
-  )
-  answers: LabelChecklistQuestionAnswerEntity[];
 }

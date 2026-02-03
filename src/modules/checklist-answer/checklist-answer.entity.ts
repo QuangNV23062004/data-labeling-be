@@ -1,14 +1,16 @@
-import { BaseEntity } from 'src/common/entity/base.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { BaseEntity } from 'src/common/entity/base.entity';
 import { FileLabelEntity } from '../file-label/file-label.entity';
-import { LabelChecklistQuestionEntity } from '../label-checklist-question/label-checklist-question.entity';
+import { AnswerTypeEnum } from './enums/answer-type.enums';
+import { Role } from '../account/enums/role.enum';
 import { AccountEntity } from '../account/account.entity';
+import { AnswerData } from './interface/answer-data.interface';
 
 @Entity('label_checklist_question_answers')
 @Index('idx_labelchecklistquestionanswer_file_label_id', ['fileLabelId'])
-@Index('idx_labelchecklistquestionanswer_question_id', ['questionId'])
 @Index('idx_labelchecklistquestionanswer_answer_by_id', ['answerById'])
-export class LabelChecklistQuestionAnswerEntity extends BaseEntity {
+@Entity('checklist-answers')
+export class ChecklistAnswerEntity extends BaseEntity {
   @Column({ name: 'file_label_id', type: 'uuid', nullable: false })
   fileLabelId: string;
 
@@ -16,12 +18,27 @@ export class LabelChecklistQuestionAnswerEntity extends BaseEntity {
   @JoinColumn({ name: 'file_label_id' })
   fileLabel: FileLabelEntity;
 
-  @Column({ name: 'question_id', type: 'uuid', nullable: false })
-  questionId: string;
+  @Column({ name: 'answer_data', type: 'jsonb', nullable: true })
+  answerData: AnswerData;
 
-  @ManyToOne(() => LabelChecklistQuestionEntity, { nullable: false })
-  @JoinColumn({ name: 'question_id' })
-  question: LabelChecklistQuestionEntity;
+  @Column({ name: 'round', type: 'int', nullable: false })
+  round: number;
+
+  @Column({
+    name: 'answer_type',
+    type: 'enum',
+    enum: AnswerTypeEnum,
+    nullable: false,
+  })
+  answerType: AnswerTypeEnum;
+
+  @Column({
+    name: 'role_type',
+    type: 'enum',
+    enum: [Role.ANNOTATOR, Role.REVIEWER],
+    nullable: false,
+  })
+  roleType: Role;
 
   @Column({ name: 'answer_by_id', type: 'uuid', nullable: false })
   answerById: string;

@@ -1,4 +1,8 @@
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 
 export class FileLabelNotFoundException extends NotFoundException {
   constructor(id: string) {
@@ -15,5 +19,11 @@ export class FileLabelAlreadyExistsException extends ConflictException {
 export class InvalidFileLabelException extends BadRequestException {
   constructor(message: string) {
     super(`Invalid file-label: ${message}`);
+  }
+}
+
+export class MissingRequiredFileLabelFieldException extends BadRequestException {
+  constructor(fieldName: string) {
+    super(`Missing required field: ${fieldName}`);
   }
 }

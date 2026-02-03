@@ -1,9 +1,10 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateFileDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  @IsUUID()
+  projectId: string;
 
   // Add your properties here
 }

@@ -37,7 +37,6 @@ export class StorageService {
   }
 
   getBlobSasToken(): string {
-    console.log(this.typedConfigService.storage);
     return this.typedConfigService.storage?.blobSasToken;
   }
 
@@ -51,22 +50,22 @@ export class StorageService {
 
   async uploadFilePath(
     folder: string,
-    file: Buffer,
-    filename: string,
-    extension: string = 'png',
+    image: Express.Multer.File,
   ): Promise<string> {
     const blobSasUrl = this.getBlobSasUrl();
     const blobSasToken = this.getBlobSasToken();
     const containerName = this.getBlobContainerName();
-    console.log(blobSasToken, blobSasUrl, containerName);
     const url = `${blobSasUrl}?${blobSasToken}`;
     const blobServiceClient = new BlobServiceClient(url);
     const containerClient = blobServiceClient.getContainerClient(containerName);
+    const buffer = image.buffer;
+    const fileName = crypto.randomUUID();
+    const extension = image.originalname.split('.').pop()!;
     const blockBlobClient = containerClient.getBlockBlobClient(
-      `${folder}/${filename}.${extension}`,
+      `${folder}/${fileName}.${extension}`,
     );
 
-    const result = await blockBlobClient.uploadData(file, {
+    const result = await blockBlobClient.uploadData(buffer, {
       blobHTTPHeaders: {
         blobContentType: `image/${extension}`,
       },
@@ -110,5 +109,62 @@ export class StorageService {
 
     // console.log(`Creating zip with ${files.length} files`);
     return this.createZip(files);
+  }
+
+  /**
+   * Extracts the blob path from a full URL or returns the path as-is
+   * @param filePathOrUrl - Either a full blob URL or just the blob path
+   * @returns The blob path without the base URL and container name
+   */
+  private extractBlobPath(filePathOrUrl: string): string {
+    // If it's a full URL, extract the blob path
+    if (
+      filePathOrUrl.startsWith('http://') ||
+      filePathOrUrl.startsWith('https://')
+    ) {
+      try {
+        const url = new URL(filePathOrUrl);
+        const containerName = this.getBlobContainerName();
+
+        // Remove leading slash and container name from pathname
+        // Example: /data/folder/file.jpg -> folder/file.jpg
+        const pathname = url.pathname.startsWith('/')
+          ? url.pathname.substring(1)
+          : url.pathname;
+
+        // Remove container name if present
+        if (pathname.startsWith(`${containerName}/`)) {
+          return pathname.substring(containerName.length + 1);
+        }
+
+        return pathname;
+      } catch (error) {
+        // If URL parsing fails, return as-is
+        return filePathOrUrl;
+      }
+    }
+
+    // Already just a path
+    return filePathOrUrl;
+  }
+
+  async deleteBlob(filePaths: string[]) {
+    console.log('deleted blob is called');
+    const blobSasUrl = this.getBlobSasUrl();
+    const blobSasToken = this.getBlobSasToken();
+    const containerName = this.getBlobContainerName();
+
+    const url = `${blobSasUrl}?${blobSasToken}`;
+    const blobServiceClient = new BlobServiceClient(url);
+
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    for (const filePathOrUrl of filePaths) {
+      console.log('file path:', filePathOrUrl);
+      const blobPath = this.extractBlobPath(filePathOrUrl);
+      console.log(`blobPath: ${blobPath}`);
+      const blobClient = containerClient.getBlobClient(blobPath);
+      await blobClient.deleteIfExists();
+    }
   }
 }

@@ -5,12 +5,14 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
 } from 'typeorm';
 import { ProjectEntity } from '../project/project.entity';
 import { AccountEntity } from '../account/account.entity';
 import { ContentType } from './enums/content-type.enums';
 import { ProjectTaskEntity } from '../project-task/project-task.entity';
+import { FileLabelEntity } from '../file-label/file-label.entity';
 
 @Entity({ name: 'files' })
 @Index('idx_file_project_id', ['projectId'])
@@ -58,4 +60,7 @@ export class FileEntity extends BaseEntity {
   })
   @JoinColumn({ name: 'task_id' })
   projectTask: ProjectTaskEntity | null;
+
+  @OneToMany(() => FileLabelEntity, (fileLabel) => fileLabel.file)
+  fileLabels: FileLabelEntity[];
 }

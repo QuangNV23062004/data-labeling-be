@@ -361,6 +361,8 @@ export class LabelChecklistQuestionService extends BaseService {
   }
 
   async HardDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {
+    this.validateAdminForHardDelete(accountInfo);
+
     const em = await this.labelChecklistQuestionRepository.GetEntityManager();
     return em.transaction(async (transactionalEntityManager) => {
       const existingQuestion =
@@ -376,10 +378,6 @@ export class LabelChecklistQuestionService extends BaseService {
 
       if ((existingQuestion?.children || []).length > 0) {
         throw new CannotDeleteQuestionWithChildrenException(id, true);
-      }
-
-      if ((existingQuestion?.answers || []).length > 0) {
-        throw new CannotDeleteQuestionWithAnswersException(id, true);
       }
 
       return this.labelChecklistQuestionRepository.HardDelete(

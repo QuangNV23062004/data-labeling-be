@@ -279,6 +279,7 @@ export class AccountService extends BaseService {
 
   async HardDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {
     this.checkPermission(id, accountInfo);
+    this.validateAdminForHardDelete(accountInfo);
 
     const em = await this.accountRepository.GetEntityManager();
     return em.transaction(async (transactionalEntityManager) => {

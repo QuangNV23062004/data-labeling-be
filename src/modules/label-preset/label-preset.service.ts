@@ -198,6 +198,8 @@ export class LabelPresetService extends BaseService {
   }
 
   async HardDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {
+    this.validateAdminForHardDelete(accountInfo);
+
     const em = this.labelPresetRepository.GetEntityManager();
     return (await em).transaction(async (transactionalEntityManager) => {
       const result = await this.labelPresetRepository.FindById(
