@@ -1,9 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TypedConfigService } from 'src/common/typed-config/typed-config.service';
 import * as jwt from 'jsonwebtoken';
-import { AuthException } from '../exceptions/auth-exceptions.exceptions';
 import * as bcrypt from 'bcrypt';
+import {
+  InvalidAccessTokenException,
+  InvalidRefreshTokenException,
+  InvalidResetPasswordTokenException,
+} from '../exceptions/auth-exceptions.exceptions';
 
 @Injectable()
 export class AuthJwtService {
@@ -35,7 +39,7 @@ export class AuthJwtService {
 
   async verifyAccessToken(token: string, isPublic?: boolean): Promise<any> {
     if (!token && !isPublic) {
-      throw AuthException.UNAUTHORIZED;
+      throw new UnauthorizedException();
     }
     let decoded: any;
     try {
@@ -44,17 +48,17 @@ export class AuthJwtService {
         publicKey: this.typedConfigService.jwt.publicAccessKey as string,
       });
       if (!decoded) {
-        throw AuthException.INVALID_ACCESS_TOKEN;
+        throw new InvalidAccessTokenException();
       }
     } catch (error) {
-      throw AuthException.INVALID_ACCESS_TOKEN;
+      throw new InvalidAccessTokenException();
     }
     return decoded;
   }
 
   async verifyRefreshToken(token: string): Promise<any> {
     if (!token) {
-      throw AuthException.REFRESH_TOKEN_NOT_FOUND;
+      throw new InvalidRefreshTokenException();
     }
     let decoded: any;
     try {
@@ -63,10 +67,10 @@ export class AuthJwtService {
         publicKey: this.typedConfigService.jwt.publicRefreshKey as string,
       });
       if (!decoded) {
-        throw AuthException.INVALID_REFRESH_TOKEN;
+        throw new InvalidRefreshTokenException();
       }
     } catch (error) {
-      throw AuthException.INVALID_REFRESH_TOKEN;
+      throw new InvalidRefreshTokenException();
     }
 
     return decoded;
@@ -90,7 +94,7 @@ export class AuthJwtService {
     });
 
     if (!decoded) {
-      throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+      throw new InvalidResetPasswordTokenException();
     }
     return decoded;
   }
@@ -99,7 +103,7 @@ export class AuthJwtService {
     const isTokenValid = await bcrypt.compare(token, hash);
 
     if (!isTokenValid) {
-      throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+      throw new InvalidResetPasswordTokenException();
     }
   }
 

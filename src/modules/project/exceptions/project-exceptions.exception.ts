@@ -1,4 +1,8 @@
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 
 export class ProjectNotFoundException extends NotFoundException {
   constructor(id: string) {
@@ -15,5 +19,11 @@ export class ProjectAlreadyExistsException extends ConflictException {
 export class InvalidProjectException extends BadRequestException {
   constructor(message: string) {
     super(`Invalid project: ${message}`);
+  }
+}
+
+export class UnsupportedProjectDataTypeException extends BadRequestException {
+  constructor(type: string) {
+    super(`Unsupported project data type: ${type}, only image is supported`);
   }
 }

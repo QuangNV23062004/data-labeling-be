@@ -1,20 +1,34 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsIn,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 
-export class FilterLabelChecklistQuestionQueryDto {
+export class FilterLabelChecklistQuestionQueryDto extends BasePaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  page?: number = 1;
+  @IsString()
+  @IsIn(['name', 'description'])
+  searchBy?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  @IsString()
+  @IsIn(['name', 'description', 'createdAt', 'updatedAt'])
+  orderBy?: string;
+
+  @IsOptional()
+  @IsUUID()
+  labelId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
 }

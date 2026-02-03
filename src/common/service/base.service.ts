@@ -1,5 +1,7 @@
 import { AccountInfo } from 'src/interfaces/request';
 import { Role } from 'src/modules/account/enums/role.enum';
+import { ForbiddenException } from '@nestjs/common';
+import { OnlyAdminCanHardDeleteException } from '../exceptions/global-exceptions.exceptions';
 
 /**
  * Base service class providing common utility methods.
@@ -27,5 +29,18 @@ export abstract class BaseService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Validates that the user is an ADMIN before allowing hard delete operations.
+   * Hard delete is a destructive operation that permanently removes records.
+   *
+   * @param accountInfo - Current user's account information
+   * @throws ForbiddenException if user is not an admin
+   */
+  protected validateAdminForHardDelete(accountInfo?: AccountInfo): void {
+    if (!accountInfo || accountInfo.role !== Role.ADMIN) {
+      throw new OnlyAdminCanHardDeleteException();
+    }
   }
 }

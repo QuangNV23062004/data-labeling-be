@@ -1,27 +1,38 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
-export const AccountException = {
-  ACCOUNT_NOT_FOUND: new HttpException(
-    'Account not found',
-    HttpStatus.NOT_FOUND,
-  ),
+export class AccountNotFoundException extends NotFoundException {
+  constructor() {
+    super('Account not found');
+  }
+}
 
-  EMAIL_IN_USE: new HttpException(
-    'Email already in use',
-    HttpStatus.BAD_REQUEST,
-  ),
+export class EmailInUseException extends BadRequestException {
+  constructor() {
+    super('Email already in use');
+  }
+}
 
-  INSUFFICIENT_PERMISSION: new HttpException(
-    'You do not have sufficient permission to perform actions in this lists: update roles, statuses, delete other people account',
-    HttpStatus.FORBIDDEN,
-  ),
+export class InsufficientPermissionException extends ForbiddenException {
+  constructor() {
+    super(
+      'You do not have sufficient permission to perform actions in this lists: update roles, statuses, delete other people account',
+    );
+  }
+}
 
-  CANNOT_UPDATE_OTHER_ACCOUNT: new HttpException(
-    'Only admin can update other user accounts',
-    HttpStatus.FORBIDDEN,
-  ),
-  FAILED_TO_BOOTSTRAP_ADMIN_ACCOUNT: new HttpException(
-    'Failed to bootstrap admin account',
-    HttpStatus.INTERNAL_SERVER_ERROR,
-  ),
-};
+export class CannotUpdateOtherAccountException extends ForbiddenException {
+  constructor() {
+    super('Only admin can update other user accounts');
+  }
+}
+
+export class FailedToBootstrapAdminAccountException extends InternalServerErrorException {
+  constructor() {
+    super('Failed to bootstrap admin account');
+  }
+}

@@ -11,7 +11,6 @@ import { ProjectTaskEntity } from '../project-task/project-task.entity';
 import { AccountEntity } from '../account/account.entity';
 import { Decision } from './enums/decisions.enums';
 import { ReviewErrorEntity } from '../review-error/review-error.entity';
-import { ReviewChecklistSubmissionEntity } from '../review-checklist-submission/review-checklist-submission.entity';
 
 @Entity({ name: 'reviews' })
 @Index('idx_review_task_id', ['taskId'])
@@ -43,9 +42,10 @@ export class ReviewEntity extends BaseEntity {
   @OneToMany(() => ReviewErrorEntity, (reviewError) => reviewError.review)
   reviewErrors: ReviewErrorEntity[];
 
-  @OneToMany(
-    () => ReviewChecklistSubmissionEntity,
-    (reviewChecklistSubmission) => reviewChecklistSubmission.review,
-  )
-  errors: ReviewChecklistSubmissionEntity[];
+  @Column({
+    name: 'label_checklist_question_answers_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  labelChecklistQuestionAnswersId: string;
 }

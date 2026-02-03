@@ -1,72 +1,95 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
-export const AuthException = {
-  UNAUTHORIZED: new HttpException(
-    'Unauthorized access',
-    HttpStatus.UNAUTHORIZED,
-  ),
+export class UnauthorizedAccessException extends UnauthorizedException {
+  constructor() {
+    super('Unauthorized access');
+  }
+}
 
-  INVALID_ACCESS_TOKEN: new HttpException(
-    'Invalid access token',
-    HttpStatus.UNAUTHORIZED,
-  ),
+export class InvalidAccessTokenException extends UnauthorizedException {
+  constructor() {
+    super('Invalid access token');
+  }
+}
 
-  ACCOUNT_NOT_FOUND: new HttpException(
-    'Account not found',
-    HttpStatus.NOT_FOUND,
-  ),
-  ACCOUNT_INACTIVE: new HttpException(
-    'Account is inactive, please contact administrator',
-    HttpStatus.FORBIDDEN,
-  ),
+export class AccountNotFoundException extends NotFoundException {
+  constructor() {
+    super('Account not found');
+  }
+}
 
-  INVALID_PASSWORD: new HttpException(
-    'Invalid password',
-    HttpStatus.BAD_REQUEST,
-  ),
+export class AccountInactiveException extends ForbiddenException {
+  constructor() {
+    super('Account is inactive, please contact administrator');
+  }
+}
 
-  PASSWORD_NOT_MATCH: new HttpException(
-    'Password not match',
-    HttpStatus.BAD_REQUEST,
-  ),
+export class InvalidPasswordException extends BadRequestException {
+  constructor() {
+    super('Invalid password');
+  }
+}
 
-  REFRESH_TOKEN_NOT_FOUND: new HttpException(
-    'Refresh token not found',
-    HttpStatus.UNAUTHORIZED,
-  ),
+export class PasswordNotMatchException extends BadRequestException {
+  constructor() {
+    super('Password not match');
+  }
+}
 
-  INVALID_REFRESH_TOKEN: new HttpException(
-    'Invalid refresh token',
-    HttpStatus.UNAUTHORIZED,
-  ),
+export class RefreshTokenNotFoundException extends UnauthorizedException {
+  constructor() {
+    super('Refresh token not found');
+  }
+}
 
-  INSUFFICIENT_PERMISSION: new HttpException(
-    'Insufficient permission to perform this action',
-    HttpStatus.FORBIDDEN,
-  ),
+export class InvalidRefreshTokenException extends UnauthorizedException {
+  constructor() {
+    super('Invalid refresh token');
+  }
+}
 
-  RESET_PASSWORD_TOKEN_NOT_FOUND: new HttpException(
-    'Reset password token not found',
-    HttpStatus.NOT_FOUND,
-  ),
+export class InsufficientPermissionException extends ForbiddenException {
+  constructor() {
+    super('Insufficient permission to perform this action');
+  }
+}
 
-  INVALID_RESET_PASSWORD_TOKEN: new HttpException(
-    'Invalid reset password token',
-    HttpStatus.UNAUTHORIZED,
-  ),
+export class ResetPasswordTokenNotFoundException extends NotFoundException {
+  constructor() {
+    super('Reset password token not found');
+  }
+}
 
-  RESET_TOKEN_NOT_USABLE: new HttpException(
-    'Reset password token is no longer usable, please use the latest token provided',
-    HttpStatus.FORBIDDEN,
-  ),
+export class InvalidResetPasswordTokenException extends UnauthorizedException {
+  constructor() {
+    super('Invalid reset password token');
+  }
+}
 
-  FAILED_TO_SEND_RESET_PASSWORD_EMAIL: new HttpException(
-    'Failed to send email, please try again later',
-    HttpStatus.INTERNAL_SERVER_ERROR,
-  ),
+export class ResetTokenNotUsableException extends ForbiddenException {
+  constructor() {
+    super(
+      'Reset password token is no longer usable, please use the latest token provided',
+    );
+  }
+}
 
-  PASSWORD_NOT_STRONG_ENOUGH: new HttpException(
-    'Password is not strong enough: it must be at least 8 characters long it must include uppercase letters, lowercase letters,numbers, and special characters.',
-    HttpStatus.BAD_REQUEST,
-  ),
-};
+export class FailedToSendResetPasswordEmailException extends InternalServerErrorException {
+  constructor() {
+    super('Failed to send email, please try again later');
+  }
+}
+
+export class PasswordNotStrongEnoughException extends BadRequestException {
+  constructor() {
+    super(
+      'Password is not strong enough: it must be at least 8 characters long it must include uppercase letters, lowercase letters,numbers, and special characters.',
+    );
+  }
+}

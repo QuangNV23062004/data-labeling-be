@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   Res,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './decorators';
@@ -41,42 +42,51 @@ export class AppController {
   //   });
   // }
 
-  //test upload via azure blob storage
-  @Public()
-  @Post('test-upload')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: 512 * 1024 * 1024 }, //512 mb
-    }),
-  )
-  async testUpload(
-    @UploadedFile() file: Express.Multer.File,
-    @Body()
-    data: {
-      folder: string;
-    },
-  ) {
-    const fileUrl = await this.storageService.uploadFilePath(
-      data.folder,
-      file.buffer,
-      file.fieldname + '-' + Date.now(),
-      file.mimetype.split('/')[1],
-    );
-    return {
-      fileUrl,
-    };
-  }
+  //  // test upload via azure blob storage
+  // @Public()
+  // @Post('test-upload')
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //     storage: memoryStorage(),
+  //     limits: { fileSize: 512 * 1024 * 1024 }, //512 mb
+  //   }),
+  // )
+  // async testUpload(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Body()
+  //   data: {
+  //     folder: string;
+  //   },
+  // ) {
+  //   const fileUrl = await this.storageService.uploadFilePath(
+  //     data.folder,
+  //     file.buffer,
+  //     file.fieldname + '-' + Date.now(),
+  //     file.mimetype.split('/')[1],
+  //   );
+  //   return {
+  //     fileUrl,
+  //   };
+  // }
 
-  //test download folder from azure blob storage
-  @Public()
-  @Get('test-download')
-  async testDownload(@Query('folder') folder: string, @Res() res: Response) {
-    const zipBuffer = await this.storageService.downloadBlobFolder(folder);
-    res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${folder}.zip"`,
-    });
-    res.send(zipBuffer);
-  }
+  // //test download folder from azure blob storage
+  // @Public()
+  // @Get('test-download')
+  // async testDownload(@Query('folder') folder: string, @Res() res: Response) {
+  //   const zipBuffer = await this.storageService.downloadBlobFolder(folder);
+  //   res.set({
+  //     'Content-Type': 'application/zip',
+  //     'Content-Disposition': `attachment; filename="${folder}.zip"`,
+  //   });
+  //   res.send(zipBuffer);
+  // }
+
+  // @Public()
+  // @Delete('test-delete')
+  // async testDelete(@Query('filePaths') filePaths: string | string[]) {
+  //   const paths = Array.isArray(filePaths) ? filePaths : [filePaths];
+  //   console.log(paths);
+  //   await this.storageService.deleteBlob(paths);
+  //   return { status: 'Deleted' };
+  // }
 }

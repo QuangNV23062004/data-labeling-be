@@ -1,20 +1,44 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsIn,
+  IsUUID,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
+import { ContentType } from '../enums/content-type.enums';
 
-export class FilterFileQueryDto {
+export class FilterFileQueryDto extends BasePaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  page?: number = 1;
+  @IsString()
+  @IsIn(['fileName', 'fileUrl'])
+  searchBy?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  @IsString()
+  @IsIn(['fileName', 'fileSize', 'createdAt', 'updatedAt'])
+  orderBy?: string;
+
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  uploadedById?: string;
+
+  @IsOptional()
+  @IsUUID()
+  taskId?: string;
+
+  @IsOptional()
+  @IsEnum(ContentType)
+  contentType?: ContentType;
 }

@@ -11,7 +11,7 @@ import { FileEntity } from '../file/file.entity';
 import { LabelEntity } from '../label/label.entity';
 import { AccountEntity } from '../account/account.entity';
 import { FileLabelStatusEnums } from './enums/file-label.enums';
-import { LabelChecklistQuestionAnswerEntity } from '../label-checklist-question-answer/label-checklist-question-answer.entity';
+import { Role } from '../account/enums/role.enum';
 
 @Entity({ name: 'file_labels' })
 @Index('idx_file_id', ['fileId'])
@@ -41,6 +41,10 @@ export class FileLabelEntity extends BaseEntity {
   @JoinColumn({ name: 'annotator_id' })
   annotator: AccountEntity;
 
+  // for future scale if need
+  @Column({ name: 'annotation_data', type: 'jsonb', nullable: true })
+  annotationData: any;
+
   // if store annotator, may be store reviewer too
   @Column({ name: 'reviewer_id', type: 'uuid', nullable: true })
   reviewerId: string;
@@ -48,6 +52,9 @@ export class FileLabelEntity extends BaseEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id)
   @JoinColumn({ name: 'reviewer_id' })
   reviewer: AccountEntity;
+
+  @Column({ name: 'current_round', type: 'int', nullable: false, default: 0 })
+  currentRound: number;
 
   @Column({
     name: 'status',
@@ -57,10 +64,4 @@ export class FileLabelEntity extends BaseEntity {
     default: FileLabelStatusEnums.DRAFT,
   })
   status: FileLabelStatusEnums;
-
-  @OneToMany(
-    () => LabelChecklistQuestionAnswerEntity,
-    (labelchecklistanswer) => labelchecklistanswer.fileLabel,
-  )
-  checklistAnswers: LabelChecklistQuestionAnswerEntity[];
 }

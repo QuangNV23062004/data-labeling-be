@@ -4,7 +4,14 @@ import { TypedConfigService } from 'src/common/typed-config/typed-config.service
 import { Status as AccountStatus } from '../account/enums/account-status.enum';
 
 import { LoginDto } from './dtos/login.dto';
-import { AuthException } from './exceptions/auth-exceptions.exceptions';
+import {
+  AccountNotFoundException,
+  AccountInactiveException,
+  RefreshTokenNotFoundException,
+  InsufficientPermissionException,
+  InvalidResetPasswordTokenException,
+  PasswordNotMatchException,
+} from './exceptions/auth-exceptions.exceptions';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { AccountInfo } from 'src/interfaces/request';
 import { Role } from '../account/enums/role.enum';
@@ -42,11 +49,11 @@ export class AuthService {
       false,
     );
     if (!account) {
-      throw AuthException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
 
     if (account.status === AccountStatus.INACTIVE) {
-      throw AuthException.ACCOUNT_INACTIVE;
+      throw new AccountInactiveException();
     }
 
     await this.authPasswordService.comparePasswords(
@@ -68,7 +75,7 @@ export class AuthService {
 
   async Refresh(refreshToken?: string) {
     if (!refreshToken) {
-      throw AuthException.REFRESH_TOKEN_NOT_FOUND;
+      throw new RefreshTokenNotFoundException();
     }
     let returnedRefreshToken = refreshToken;
 
@@ -113,14 +120,14 @@ export class AuthService {
         );
 
         if (!account) {
-          throw AuthException.ACCOUNT_NOT_FOUND;
+          throw new AccountNotFoundException();
         }
 
         const isOwner = accountInfo?.sub === id;
 
         const isAdmin = accountInfo?.role === Role.ADMIN;
         if (!isOwner && !isAdmin) {
-          throw AuthException.INSUFFICIENT_PERMISSION;
+          throw new InsufficientPermissionException();
         }
 
         if (!isAdmin) {
@@ -159,7 +166,7 @@ export class AuthService {
           transactionalEntityManager,
         );
         if (!account) {
-          throw AuthException.ACCOUNT_NOT_FOUND;
+          throw new AccountNotFoundException();
         }
 
         const payload = {
@@ -206,7 +213,7 @@ export class AuthService {
 
   async GetResetPasswordForm(token: string): Promise<string> {
     if (!token) {
-      throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+      throw new InvalidResetPasswordTokenException();
     }
 
     const decoded = await this.authJwtService.verifyResetPasswordToken(token);
@@ -217,7 +224,7 @@ export class AuthService {
       );
 
     if (!resetPasswordTokens) {
-      throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+      throw new InvalidResetPasswordTokenException();
     }
 
     //no need to validate time because jwt verify already do that
@@ -228,7 +235,7 @@ export class AuthService {
 
     const account = await this.accountRepository.FindById(decoded.sub, false);
     if (!account) {
-      throw AuthException.ACCOUNT_NOT_FOUND;
+      throw new AccountNotFoundException();
     }
 
     const template =
@@ -254,19 +261,19 @@ export class AuthService {
           verifyResetPasswordTokenDto;
 
         if (password !== confirmPassword) {
-          throw AuthException.PASSWORD_NOT_MATCH;
+          throw new PasswordNotMatchException();
         }
 
         await this.authPasswordService.isPasswordStrong(password);
 
         if (!token) {
-          throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+          throw new InvalidResetPasswordTokenException();
         }
         const decoded =
           await this.authJwtService.verifyResetPasswordToken(token);
 
         if (!decoded) {
-          throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+          throw new InvalidResetPasswordTokenException();
         }
 
         const resetPasswordTokens =
@@ -276,7 +283,7 @@ export class AuthService {
           );
 
         if (!resetPasswordTokens) {
-          throw AuthException.INVALID_RESET_PASSWORD_TOKEN;
+          throw new InvalidResetPasswordTokenException();
         }
 
         //no need to validate time because jwt verify already do that
@@ -290,7 +297,7 @@ export class AuthService {
           false,
         );
         if (!account) {
-          throw AuthException.ACCOUNT_NOT_FOUND;
+          throw new AccountNotFoundException();
         }
 
         const { salt, hash } =

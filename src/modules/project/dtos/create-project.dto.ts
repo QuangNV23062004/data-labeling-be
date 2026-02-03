@@ -11,7 +11,7 @@ export class CreateProjectDto {
 
   @IsString()
   @ApiProperty({
-    description: 'Project description'
+    description: 'Project description',
   })
   description?: string;
 
