@@ -8,6 +8,9 @@ import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto
 import { CreateFileLabelDto } from './dtos/create-file-label.dto';
 import { UpdateFileLabelDto } from './dtos/update-file-label.dto';
 import {
+  CannotHardDeleteFileLabelWithChecklistAnswersException,
+  CannotRestoreFileLabelWithDeletedRelationsException,
+  FileAccessNotAllowedException,
   FileLabelNotFoundException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
@@ -15,6 +18,7 @@ import { FileRepository } from '../file/file.repository';
 import { LabelRepository } from '../label/label.repository';
 import { FileNotFoundException } from '../file/exceptions/file-exceptions.exception';
 import { LabelNotFoundException } from '../label/exceptions/label-exceptions.exceptions';
+import { Role } from '../account/enums/role.enum';
 
 @Injectable()
 export class FileLabelService extends BaseService {
@@ -78,8 +82,6 @@ export class FileLabelService extends BaseService {
     return this.repository.FindByIds(ids, safeIncludedDeleted);
   }
 
-  // TODO: Consider adding checklist questions bulk creation along with file labels
-  // TODO:
   async Create(
     data: CreateFileLabelDto,
     accountInfo?: AccountInfo,
@@ -119,8 +121,21 @@ export class FileLabelService extends BaseService {
 
       data.labelId = label.id;
 
-      entity.annotatorId = accountInfo?.sub as string;
+      if (
+        file.annotatorId !== accountInfo?.sub &&
+        file.reviewerId !== accountInfo?.sub &&
+        accountInfo?.role !== Role.ADMIN
+      ) {
+        throw new FileAccessNotAllowedException(file.id);
+      }
 
+      if (accountInfo?.role === Role.ANNOTATOR) {
+        entity.annotatorId = accountInfo?.sub as string;
+      }
+
+      if (accountInfo?.role === Role.REVIEWER) {
+        entity.reviewerId = accountInfo?.sub as string;
+      }
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -142,6 +157,14 @@ export class FileLabelService extends BaseService {
         throw new FileLabelNotFoundException(id);
       }
 
+      if (
+        entity?.file?.annotatorId !== accountInfo?.sub &&
+        entity?.file?.reviewerId !== accountInfo?.sub &&
+        accountInfo?.role !== Role.ADMIN
+      ) {
+        throw new FileAccessNotAllowedException(entity.file.id);
+      }
+
       Object.assign(entity, data);
       if (data?.fileId) {
         const file = await this.fileRepository.FindById(
@@ -154,7 +177,8 @@ export class FileLabelService extends BaseService {
           throw new FileNotFoundException(data.fileId);
         }
 
-        data.fileId = file.id;
+        entity.fileId = file.id;
+        entity.file = file;
       }
 
       if (data?.labelId) {
@@ -167,7 +191,15 @@ export class FileLabelService extends BaseService {
         if (!label) {
           throw new LabelNotFoundException();
         }
-        data.labelId = label.id;
+        entity.labelId = label.id;
+        entity.label = label;
+      }
+
+      if (accountInfo?.role === Role.ANNOTATOR) {
+        entity.annotatorId = accountInfo?.sub as string;
+      }
+      if (accountInfo?.role === Role.REVIEWER) {
+        entity.reviewerId = accountInfo?.sub as string;
       }
 
       return this.repository.Update(entity, transactionalEntityManager);
@@ -185,6 +217,14 @@ export class FileLabelService extends BaseService {
 
       if (!entity) {
         throw new FileLabelNotFoundException(id);
+      }
+
+      if (
+        entity?.file?.annotatorId !== accountInfo?.sub &&
+        entity?.file?.reviewerId !== accountInfo?.sub &&
+        accountInfo?.role !== Role.ADMIN
+      ) {
+        throw new FileAccessNotAllowedException(entity.file.id);
       }
 
       return this.repository.SoftDelete(id, transactionalEntityManager);
@@ -206,7 +246,9 @@ export class FileLabelService extends BaseService {
         throw new FileLabelNotFoundException(id);
       }
 
-      // TODO: Add business logic check - cannot delete if fileLabel has checklist answers
+      if (entity?.checklistAnswers && entity.checklistAnswers.length > 0) {
+        throw new CannotHardDeleteFileLabelWithChecklistAnswersException(id);
+      }
 
       return this.repository.HardDelete(id, transactionalEntityManager);
     });
@@ -225,7 +267,13 @@ export class FileLabelService extends BaseService {
         throw new FileLabelNotFoundException(id);
       }
 
-      // TODO: Add validation checks (e.g., file and label must not be deleted)
+      if (entity?.file?.deletedAt !== null) {
+        throw new CannotRestoreFileLabelWithDeletedRelationsException(id);
+      }
+
+      if (entity?.label?.deletedAt !== null) {
+        throw new CannotRestoreFileLabelWithDeletedRelationsException(id);
+      }
 
       return this.repository.Restore(id, transactionalEntityManager);
     });

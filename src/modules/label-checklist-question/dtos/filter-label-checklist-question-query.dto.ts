@@ -27,8 +27,4 @@ export class FilterLabelChecklistQuestionQueryDto extends BasePaginationQueryDto
   @IsOptional()
   @IsUUID()
   labelId?: string;
-
-  @IsOptional()
-  @IsUUID()
-  parentId?: string;
 }

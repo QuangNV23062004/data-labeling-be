@@ -45,6 +45,7 @@ import { DatasetModule } from './modules/dataset/dataset.module';
 import { ProjectSnapshotModule } from './modules/project-snapshot/project-snapshot.module';
 import { AccountRatingModule } from './modules/account-rating/account-rating.module';
 import { AccountRatingHistoryModule } from './modules/account-rating-history/account-rating-history.module';
+import { ChecklistAnswerModule } from './modules/checklist-answer/checklist-answer.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { AccountRatingHistoryModule } from './modules/account-rating-history/acc
     ProjectSnapshotModule,
     AccountRatingModule,
     AccountRatingHistoryModule,
+    ChecklistAnswerModule,
   ],
   controllers: [AppController],
   providers: [

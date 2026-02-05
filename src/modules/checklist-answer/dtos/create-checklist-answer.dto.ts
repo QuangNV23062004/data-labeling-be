@@ -1,9 +1,28 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  IsUUID,
+} from 'class-validator';
+import { AnswerTypeEnum } from '../enums/answer-type.enums';
+import { AnswerDataDto } from './answer-data/answer-data.dto';
+import { Type } from 'class-transformer/types/decorators/type.decorator';
 
 export class CreateChecklistAnswerDto {
   @IsNotEmpty()
-  @IsString()
-  name: string;
+  @IsUUID()
+  fileLabelId: string;
 
-  // Add your properties here
+  @IsNotEmpty()
+  @Type(() => AnswerDataDto)
+  answerData: AnswerDataDto;
+
+  @IsNotEmpty()
+  @IsEnum(AnswerTypeEnum)
+  answerType: AnswerTypeEnum;
+
+  @IsNotEmpty()
+  @IsUUID()
+  answerById: string;
 }

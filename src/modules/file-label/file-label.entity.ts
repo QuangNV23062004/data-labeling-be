@@ -12,6 +12,7 @@ import { LabelEntity } from '../label/label.entity';
 import { AccountEntity } from '../account/account.entity';
 import { FileLabelStatusEnums } from './enums/file-label.enums';
 import { Role } from '../account/enums/role.enum';
+import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
 
 @Entity({ name: 'file_labels' })
 @Index('idx_file_id', ['fileId'])
@@ -53,15 +54,18 @@ export class FileLabelEntity extends BaseEntity {
   @JoinColumn({ name: 'reviewer_id' })
   reviewer: AccountEntity;
 
-  @Column({ name: 'current_round', type: 'int', nullable: false, default: 0 })
-  currentRound: number;
-
   @Column({
     name: 'status',
     type: 'enum',
     enum: FileLabelStatusEnums,
     nullable: false,
-    default: FileLabelStatusEnums.DRAFT,
+    default: FileLabelStatusEnums.IN_PROGRESS,
   })
   status: FileLabelStatusEnums;
+
+  @OneToMany(
+    () => ChecklistAnswerEntity,
+    (checklistAnswer) => checklistAnswer.fileLabel,
+  )
+  checklistAnswers: ChecklistAnswerEntity[];
 }

@@ -71,11 +71,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'file.projectTask',
-        'projectTask',
-        'projectTask.deletedAt IS NULL',
-      );
+
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
@@ -84,7 +80,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.projectTask', 'projectTask');
+
       qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
     }
 
@@ -148,11 +144,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'file.projectTask',
-        'projectTask',
-        'projectTask.deletedAt IS NULL',
-      );
+
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
@@ -161,7 +153,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.projectTask', 'projectTask');
+
       qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
     }
 
@@ -209,11 +201,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'file.projectTask',
-        'projectTask',
-        'projectTask.deletedAt IS NULL',
-      );
+
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
@@ -222,7 +210,6 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.projectTask', 'projectTask');
       qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
     }
 
@@ -251,11 +238,7 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'file.projectTask',
-        'projectTask',
-        'projectTask.deletedAt IS NULL',
-      );
+
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
@@ -264,7 +247,6 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.projectTask', 'projectTask');
       qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
     }
 

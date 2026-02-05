@@ -55,7 +55,4 @@ export class ProjectTaskEntity extends BaseEntity {
 
   @Column({ name: 'priority', type: 'enum', enum: ProjectTaskPriorityEnums })
   priority: ProjectTaskPriorityEnums;
-
-  @OneToMany(() => FileEntity, (file) => file.projectTask)
-  files: FileEntity[];
 }

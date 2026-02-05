@@ -6,10 +6,10 @@ import { Role } from '../account/enums/role.enum';
 import { AccountEntity } from '../account/account.entity';
 import { AnswerData } from './interface/answer-data.interface';
 
-@Entity('label_checklist_question_answers')
-@Index('idx_labelchecklistquestionanswer_file_label_id', ['fileLabelId'])
-@Index('idx_labelchecklistquestionanswer_answer_by_id', ['answerById'])
-@Entity('checklist-answers')
+@Entity('checklist_answers')
+@Index('idx_checklistanswers_file_label_id', ['fileLabelId'])
+@Index('idx_checklistanswers_answer_by_id', ['answerById'])
+@Index('idx_checklistanswers_role_type', ['roleType'])
 export class ChecklistAnswerEntity extends BaseEntity {
   @Column({ name: 'file_label_id', type: 'uuid', nullable: false })
   fileLabelId: string;
@@ -21,8 +21,8 @@ export class ChecklistAnswerEntity extends BaseEntity {
   @Column({ name: 'answer_data', type: 'jsonb', nullable: true })
   answerData: AnswerData;
 
-  @Column({ name: 'round', type: 'int', nullable: false })
-  round: number;
+  @Column({ name: 'label_attempt_number', type: 'int', nullable: false })
+  labelAttemptNumber: number;
 
   @Column({
     name: 'answer_type',
@@ -46,7 +46,4 @@ export class ChecklistAnswerEntity extends BaseEntity {
   @ManyToOne(() => AccountEntity, { nullable: false })
   @JoinColumn({ name: 'answer_by_id' })
   answerBy: AccountEntity;
-
-  @Column({ name: 'is_true', type: 'boolean', nullable: false })
-  isTrue: boolean;
 }

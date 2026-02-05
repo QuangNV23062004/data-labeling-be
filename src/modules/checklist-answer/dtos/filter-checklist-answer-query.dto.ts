@@ -1,20 +1,41 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  IsIn,
+  IsUUID,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
+import { AnswerTypeEnum } from '../enums/answer-type.enums';
+import { Role } from 'src/modules/account/enums/role.enum';
 
-export class FilterChecklistAnswerQueryDto {
+export class FilterChecklistAnswerQueryDto extends BasePaginationQueryDto {
   @IsOptional()
-  @IsString()
-  search?: string;
+  @IsUUID()
+  fileLabelId?: string;
 
   @IsOptional()
-  @Type(() => Number)
   @IsNumber()
+  @Type(() => Number)
   @Min(1)
-  page?: number = 1;
+  labelAttemptNumber?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  @IsEnum(AnswerTypeEnum)
+  answerType?: AnswerTypeEnum;
+
+  @IsOptional()
+  @IsEnum([Role.ANNOTATOR, Role.REVIEWER])
+  roleType?: Role;
+
+  @IsOptional()
+  @IsIn(['createdAt', 'updatedAt', 'label_attempt_number'])
+  orderBy?: string;
+
+  @IsOptional()
+  @IsUUID()
+  answerById?: string;
 }
