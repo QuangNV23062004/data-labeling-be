@@ -78,9 +78,8 @@ export class ProjectController {
     @Body() dto: UpdateProjectDto,
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<ProjectEntity> {
-    if (id) dto.id = id;
-    //TODO: handle image upload later
-    return await this.projectService.Update(dto, image);
+
+    return await this.projectService.Update(id, dto, image);
   }
 
   @ApiOperation({ summary: 'Delete Project' })

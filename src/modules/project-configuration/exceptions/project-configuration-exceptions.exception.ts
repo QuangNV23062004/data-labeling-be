@@ -17,3 +17,15 @@ export class InvalidProjectConfigurationException extends BadRequestException {
     super(`Invalid project-configuration: ${message}`);
   }
 }
+
+export class InvalidProjectIdException extends NotFoundException {
+  constructor(projectId: string) {
+    super(`Project with ID "${projectId}" not found`);
+  }
+}
+
+export class InvalidLabelIdsException extends NotFoundException {
+  constructor(labelIds: string[]) {
+    super(`The following label IDs were not found: ${labelIds.join(', ')}`);
+  }
+}

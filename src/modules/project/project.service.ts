@@ -14,12 +14,14 @@ import {
 import { StorageService } from 'src/common/storage/storage.service';
 import { DataType } from './enums/data-type.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { ProjectConfigurationService } from '../project-configuration/project-configuration.service';
 
 @Injectable()
 export class ProjectService extends BaseService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly storageService: StorageService,
+    private readonly projectConfigurationService: ProjectConfigurationService,
   ) {
     super();
   }
@@ -30,7 +32,7 @@ export class ProjectService extends BaseService {
     image?: Express.Multer.File,
   ): Promise<ProjectEntity> {
     const em = await this.projectRepository.GetEntityManager();
-    return await em.transaction(async (transactionalEntityManager) => {
+    let entity = await em.transaction(async (transactionalEntityManager) => {
       if (request.dataType !== DataType.IMAGE) {
         throw new UnsupportedProjectDataTypeException(request.dataType);
       }
@@ -59,13 +61,22 @@ export class ProjectService extends BaseService {
           transactionalEntityManager,
         );
       }
-
+      
       return createdProject;
     });
+
+    // Auto-create project configuration
+    await this.projectConfigurationService.Create({
+      projectId: entity.id,
+      availableLabelIds: request.availableLabelIds ?? [],
+    });
+    
+    return entity;
   }
 
   async Update(
-    project: UpdateProjectDto,
+    id: string,
+    dto: UpdateProjectDto,
     image?: Express.Multer.File,
   ): Promise<ProjectEntity> {
     const em = await this.projectRepository.GetEntityManager();
@@ -73,20 +84,20 @@ export class ProjectService extends BaseService {
     const transactionResult = await em.transaction(
       async (transactionalEntityManager) => {
         let entity = await this.projectRepository.FindById(
-          project.id,
+          id,
           false,
           transactionalEntityManager,
         );
 
-        if (!entity) throw new ProjectNotFoundException(project.id);
+        if (!entity) throw new ProjectNotFoundException(id);
 
-        entity.name = project.name ?? entity.name;
-        entity.description = project.description ?? entity.description;
-        if (project.dataType && project.dataType !== DataType.IMAGE) {
-          throw new UnsupportedProjectDataTypeException(project.dataType);
+        entity.name = dto.name ?? entity.name;
+        entity.description = dto.description ?? entity.description;
+        if (dto.dataType && dto.dataType !== DataType.IMAGE) {
+          throw new UnsupportedProjectDataTypeException(dto.dataType);
         }
 
-        entity.dataType = project.dataType ?? entity.dataType;
+        entity.dataType = dto.dataType ?? entity.dataType;
 
         if (image) {
           const imageUrl = await this.storageService.uploadFilePath(
@@ -114,7 +125,14 @@ export class ProjectService extends BaseService {
   async Delete(projectId: string): Promise<void> {
     const em = await this.projectRepository.GetEntityManager();
     await em.transaction(async (transactionalEntityManager) => {
+      // Soft delete the project
       await this.projectRepository.SoftDelete(
+        projectId,
+        transactionalEntityManager,
+      );
+      
+      // Cascade soft delete to project configuration
+      await this.projectConfigurationService.SoftDeleteByProjectId(
         projectId,
         transactionalEntityManager,
       );

@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { DataType } from '../enums/data-type.enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { File } from 'buffer';
@@ -23,4 +23,8 @@ export class CreateProjectDto {
     enum: DataType,
   })
   dataType: DataType;
+
+  @IsArray()
+  @IsString({ each: true })
+  availableLabelIds: string[];
 }

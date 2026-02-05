@@ -5,9 +5,10 @@ import { ProjectService } from './project.service';
 import { ProjectRepository } from './project.repository';
 import { ProjectEntity } from './project.entity';
 import { StorageModule } from 'src/common/storage/storage.module';
+import { ProjectConfigurationModule } from '../project-configuration/project-configuration.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProjectEntity]), StorageModule],
+  imports: [TypeOrmModule.forFeature([ProjectEntity]), StorageModule, ProjectConfigurationModule],
   controllers: [ProjectController],
   providers: [ProjectService, ProjectRepository],
   exports: [ProjectService, ProjectRepository],
