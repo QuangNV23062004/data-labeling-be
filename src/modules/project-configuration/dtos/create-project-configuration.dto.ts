@@ -1,9 +1,13 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsArray, ArrayNotEmpty, IsUUID } from 'class-validator';
 
 export class CreateProjectConfigurationDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  projectId: string;
 
-  // Add your properties here
+  @IsNotEmpty()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  availableLabelIds: string[];
 }
