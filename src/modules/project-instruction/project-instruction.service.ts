@@ -36,10 +36,10 @@ export class ProjectInstructionService {
         await this.projectInstructionRepository.Delete(existingInstruction.id);
 
       // Upload file to storage
-        let attachmentUrl = file? await this.storageService.uploadFilePath(
-          `project-instructions/${dto.projectId}`,
-          file,
-        ) : null;
+      let attachmentUrl = file? await this.storageService.uploadFilePath(
+        `project-instructions/${dto.projectId}`,
+        file,
+      ) : null;
 
       // Create project instruction entity
       let projectInstruction: Partial<ProjectInstructionEntity> = {
@@ -51,6 +51,7 @@ export class ProjectInstructionService {
 
       return await this.projectInstructionRepository.Create(
         projectInstruction as ProjectInstructionEntity,
+        transactionalEntityManager
       );
     });
     
@@ -96,17 +97,14 @@ export class ProjectInstructionService {
         throw new ProjectInstructionNotFoundException(projectId);
       }
 
-      // Upload new file
       if (entity.attachmentUrl) {
         await this.storageService.deleteBlob([entity.attachmentUrl]);
       }
 
-      if (file){
-        entity.attachmentUrl = await this.storageService.uploadFilePath(
-        `project-instructions/${entity.projectId}`,
-        file,
+      entity.attachmentUrl = await this.storageService.uploadFilePath(
+      `project-instructions/${entity.projectId}`,
+      file,
       );
-      }
       return await this.projectInstructionRepository.Update(entity, transactionalEntityManager);
     });
   }

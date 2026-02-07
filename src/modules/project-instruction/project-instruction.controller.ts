@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -65,7 +66,7 @@ export class ProjectInstructionController {
   @Post()
   async Create(
     @Body() dto: CreateProjectInstructionDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File
   ): Promise<ProjectInstructionEntity> {
     return await this.projectInstructionService.Create(dto, file);
   }
@@ -100,7 +101,6 @@ export class ProjectInstructionController {
     @Param('projectId') projectId: string,
     @Body() dto: UpdateProjectInstructionDto,
     @UploadedFile() file: Express.Multer.File,
-    @Request() req: IAuthenticatedRequest,
   ): Promise<ProjectInstructionEntity> {
     return await this.projectInstructionService.Update(projectId, dto, file);
   }
@@ -132,9 +132,10 @@ export class ProjectInstructionController {
   @Patch(':projectId/file')
   async UpdateFile(
     @Param('projectId') projectId: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Request() req: IAuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File
   ): Promise<ProjectInstructionEntity> {
+    if (!file) 
+      throw new BadRequestException('File is required');
     return await this.projectInstructionService.UpdateFile(projectId, file);
   }
 
