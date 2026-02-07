@@ -1,9 +1,16 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
+
 export class CreateProjectInstructionDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
-
-  // Add your properties here
+  projectId: string;
+  
+  @IsNotEmpty()
+  @IsString()
+  title: string;
+  
+  @IsNotEmpty()
+  @IsString()
+  content: string;
 }
