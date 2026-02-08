@@ -2,7 +2,7 @@ import { NotFoundException, ConflictException, BadRequestException } from '@nest
 
 export class ProjectInstructionNotFoundException extends NotFoundException {
   constructor(id: string) {
-    super(`ProjectInstruction with ID "${id}" not found`);
+    super(`ProjectInstruction with ProjectID "${id}" not found`);
   }
 }
 
