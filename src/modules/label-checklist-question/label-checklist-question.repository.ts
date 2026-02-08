@@ -44,9 +44,9 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
       });
     }
 
-    if (query?.parentId) {
-      qb.andWhere(`label_checklist_question.parentId = :parentId`, {
-        parentId: query.parentId,
+    if (query?.role) {
+      qb.andWhere(`label_checklist_question.roleEnum = :role`, {
+        role: query.role,
       });
     }
 
@@ -58,31 +58,19 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
         'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
-        'label_checklist_question.parent',
-        'parent',
-        'parent.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.answers',
-        'answers',
-        'answers.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
         'label.categories',
         'categories',
         'categories.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.children',
-        'children',
-        'children.deletedAt IS NULL',
-      );
     } else {
       qb.leftJoinAndSelect('label_checklist_question.label', 'label');
-      qb.leftJoinAndSelect('label_checklist_question.parent', 'parent');
-      qb.leftJoinAndSelect('label_checklist_question.answers', 'answers');
       qb.leftJoinAndSelect('label.categories', 'categories');
-      qb.leftJoinAndSelect('label_checklist_question.children', 'children');
+    }
+
+    if (query?.isRequired !== undefined) {
+      qb.andWhere(`label_checklist_question.isRequired = :isRequired`, {
+        isRequired: query.isRequired,
+      });
     }
 
     return await qb.getMany();
@@ -118,9 +106,9 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
       });
     }
 
-    if (query?.parentId) {
-      qb.andWhere(`label_checklist_question.parentId = :parentId`, {
-        parentId: query.parentId,
+    if (query?.role) {
+      qb.andWhere(`label_checklist_question.roleEnum = :role`, {
+        role: query.role,
       });
     }
 
@@ -132,31 +120,19 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
         'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
-        'label_checklist_question.parent',
-        'parent',
-        'parent.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.answers',
-        'answers',
-        'answers.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
         'label.categories',
         'categories',
         'categories.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.children',
-        'children',
-        'children.deletedAt IS NULL',
-      );
     } else {
       qb.leftJoinAndSelect('label_checklist_question.label', 'label');
-      qb.leftJoinAndSelect('label_checklist_question.parent', 'parent');
-      qb.leftJoinAndSelect('label_checklist_question.answers', 'answers');
       qb.leftJoinAndSelect('label.categories', 'categories');
-      qb.leftJoinAndSelect('label_checklist_question.children', 'children');
+    }
+
+    if (query?.isRequired !== undefined) {
+      qb.andWhere(`label_checklist_question.isRequired = :isRequired`, {
+        isRequired: query.isRequired,
+      });
     }
 
     const total = await qb.getCount();
@@ -199,31 +175,13 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
         'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
-        'label_checklist_question.parent',
-        'parent',
-        'parent.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.answers',
-        'answers',
-        'answers.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
         'label.categories',
         'categories',
         'categories.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.children',
-        'children',
-        'children.deletedAt IS NULL',
-      );
     } else {
       qb.leftJoinAndSelect('label_checklist_question.label', 'label');
-      qb.leftJoinAndSelect('label_checklist_question.parent', 'parent');
-      qb.leftJoinAndSelect('label_checklist_question.answers', 'answers');
       qb.leftJoinAndSelect('label.categories', 'categories');
-      qb.leftJoinAndSelect('label_checklist_question.children', 'children');
     }
 
     return await qb.getOne();
@@ -247,31 +205,13 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
         'label.deletedAt IS NULL',
       );
       qb.leftJoinAndSelect(
-        'label_checklist_question.parent',
-        'parent',
-        'parent.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.answers',
-        'answers',
-        'answers.deletedAt IS NULL',
-      );
-      qb.leftJoinAndSelect(
         'label.categories',
         'categories',
         'categories.deletedAt IS NULL',
       );
-      qb.leftJoinAndSelect(
-        'label_checklist_question.children',
-        'children',
-        'children.deletedAt IS NULL',
-      );
     } else {
       qb.leftJoinAndSelect('label_checklist_question.label', 'label');
-      qb.leftJoinAndSelect('label_checklist_question.parent', 'parent');
-      qb.leftJoinAndSelect('label_checklist_question.answers', 'answers');
       qb.leftJoinAndSelect('label.categories', 'categories');
-      qb.leftJoinAndSelect('label_checklist_question.children', 'children');
     }
 
     return await qb.getMany();

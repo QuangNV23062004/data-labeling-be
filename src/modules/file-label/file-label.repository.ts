@@ -279,6 +279,27 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     return await qb.getMany();
   }
 
+  /**
+   * Find a file-label pair by fileId and labelId
+   * Used to prevent duplicate file-label assignments
+   */
+  async FindByFileAndLabel(
+    fileId: string,
+    labelId: string,
+    includeDeleted: boolean = false,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity | null> {
+    const repository = await this.GetRepository(em);
+
+    const whereClause = includeDeleted
+      ? { fileId, labelId }
+      : { fileId, labelId, deletedAt: IsNull() };
+
+    return repository.findOne({
+      where: whereClause,
+    });
+  }
+
   async Create(
     data: FileLabelEntity,
     em?: EntityManager,

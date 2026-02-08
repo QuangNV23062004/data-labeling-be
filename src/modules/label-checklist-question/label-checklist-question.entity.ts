@@ -13,9 +13,8 @@ import { AccountEntity } from '../account/account.entity';
 
 @Entity('label_checklist_questions')
 @Index('idx_labelchecklistquestion_label_id', ['labelId'])
-@Index('idx_labelchecklistquestion_label_checklist_question_id', [
-  'labelChecklistQuestionId',
-])
+@Index('idx_labelchecklistquestion_role', ['roleEnum'])
+@Index('idx_labelchecklistquestion_label_id_role', ['labelId', 'roleEnum'])
 export class LabelChecklistQuestionEntity extends BaseEntity {
   @Column({ name: 'label_id', type: 'uuid', nullable: true })
   labelId: string;
@@ -30,27 +29,14 @@ export class LabelChecklistQuestionEntity extends BaseEntity {
   @Column({ name: 'description', type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'label_checklist_question_id', type: 'uuid', nullable: true })
-  labelChecklistQuestionId: string;
-
-  @ManyToOne(
-    () => LabelChecklistQuestionEntity,
-    (labelChecklistQuestion) => labelChecklistQuestion.children,
-  )
-  @JoinColumn({ name: 'label_checklist_question_id' })
-  parent: LabelChecklistQuestionEntity;
-
-  @OneToMany(
-    () => LabelChecklistQuestionEntity,
-    (labelChecklistQuestion) => labelChecklistQuestion.parent,
-  )
-  children: LabelChecklistQuestionEntity[];
-
   @Column({ name: 'role', type: 'enum', enum: [Role.ANNOTATOR, Role.REVIEWER] })
   roleEnum: Role;
 
-  @Column({ name: 'created_by_id', nullable: false })
+  @Column({ name: 'created_by_id', type: 'uuid', nullable: false })
   createdById: string;
+
+  @Column({ name: 'is_required', type: 'boolean', default: false })
+  isRequired: boolean;
 
   @ManyToOne(() => AccountEntity, {
     nullable: false,

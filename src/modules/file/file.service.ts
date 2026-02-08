@@ -20,8 +20,14 @@ import { ContentType } from './enums/content-type.enums';
 import { UpdateFileDto } from './dtos/update-file.dto';
 import { ProjectRepository } from '../project/project.repository';
 import { ProjectNotFoundException } from '../project/exceptions/project-exceptions.exception';
+import { AccountRepository } from '../account/account.repository';
+import { AccountNotFoundException } from '../account/exceptions/account-exceptions.exceptions';
 import { ProjectStatus } from '../project/enums/project-status.enums';
 import { DataType } from '../project/enums/data-type.enums';
+import { ImageExtension } from './enums/image-extensions.enums';
+import { TextExtension } from './enums/text-extensions.enums';
+import { VideoExtension } from './enums/video-extensions.enums';
+import { AudioExtension } from './enums/audio-extensions.enums';
 
 @Injectable()
 export class FileService extends BaseService {
@@ -42,19 +48,19 @@ export class FileService extends BaseService {
     let allowExtensions;
     switch (projectType) {
       case DataType.IMAGE:
-        allowExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp', 'svg'];
+        allowExtensions = Object.values(ImageExtension);
         break;
 
       case DataType.VIDEO:
-        allowExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv'];
+        allowExtensions = Object.values(VideoExtension);
         break;
 
       case DataType.TEXT:
-        allowExtensions = ['txt', 'docs', 'docx', 'pdf'];
+        allowExtensions = Object.values(TextExtension);
         break;
 
       case DataType.AUDIO:
-        allowExtensions = ['mp3', 'wav', 'aac'];
+        allowExtensions = Object.values(AudioExtension);
         break;
       default:
         allowExtensions = [];
@@ -167,6 +173,15 @@ export class FileService extends BaseService {
       entity.fileUrl = filePath;
       entity.projectId = data.projectId;
       entity.uploadedById = accountInfo?.sub as string;
+
+      if (data.annotatorId !== undefined) {
+        entity.annotatorId = data.annotatorId;
+      }
+      if (data.reviewerId !== undefined) {
+        if (data.reviewerId) {
+          entity.reviewerId = data.reviewerId;
+        }
+      }
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -227,7 +242,17 @@ export class FileService extends BaseService {
           this.checkFileAndProjectType(fileToCheck, entity.project?.dataType);
         }
         Object.assign(entity, data);
+        console.log(data);
 
+        if (data?.annotatorId !== undefined) {
+          entity.annotatorId = data.annotatorId;
+        }
+
+        if (data?.reviewerId !== undefined) {
+          entity.reviewerId = data.reviewerId;
+        }
+
+        console.log(entity);
         const result = await this.repository.Update(
           entity,
           transactionalEntityManager,
