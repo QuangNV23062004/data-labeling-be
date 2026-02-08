@@ -12,6 +12,7 @@ import {
   CannotRestoreFileLabelWithDeletedRelationsException,
   FileAccessNotAllowedException,
   FileLabelNotFoundException,
+  FileLabelPairAlreadyExistsException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
 import { FileRepository } from '../file/file.repository';
@@ -129,6 +130,21 @@ export class FileLabelService extends BaseService {
         throw new FileAccessNotAllowedException(file.id);
       }
 
+      // Check if file already has this label assigned
+      const existingFileLabel = await this.repository.FindByFileAndLabel(
+        data.fileId,
+        data.labelId,
+        false,
+        transactionalEntityManager,
+      );
+
+      if (existingFileLabel) {
+        throw new FileLabelPairAlreadyExistsException(
+          data.fileId,
+          data.labelId,
+        );
+      }
+
       if (accountInfo?.role === Role.ANNOTATOR) {
         entity.annotatorId = accountInfo?.sub as string;
       }
@@ -166,6 +182,23 @@ export class FileLabelService extends BaseService {
       }
 
       Object.assign(entity, data);
+
+      if (
+        (data?.fileId && data.fileId !== entity.fileId) ||
+        (data?.labelId && data.labelId !== entity.labelId)
+      ) {
+        const checkLabel = data?.labelId ? data.labelId : entity.labelId;
+        const checkFile = data?.fileId ? data.fileId : entity.fileId;
+        const existingFileLabel = await this.repository.FindByFileAndLabel(
+          checkFile,
+          checkLabel,
+          false,
+          transactionalEntityManager,
+        );
+        if (existingFileLabel && existingFileLabel.id !== entity.id) {
+          throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
+        }
+      }
       if (data?.fileId) {
         const file = await this.fileRepository.FindById(
           data.fileId,
@@ -191,6 +224,7 @@ export class FileLabelService extends BaseService {
         if (!label) {
           throw new LabelNotFoundException();
         }
+
         entity.labelId = label.id;
         entity.label = label;
       }

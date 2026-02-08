@@ -16,6 +16,14 @@ export class FileLabelAlreadyExistsException extends ConflictException {
   }
 }
 
+export class FileLabelPairAlreadyExistsException extends ConflictException {
+  constructor(fileId: string, labelId: string) {
+    super(
+      `File with ID "${fileId}" already has Label with ID "${labelId}" assigned`,
+    );
+  }
+}
+
 export class InvalidFileLabelException extends BadRequestException {
   constructor(message: string) {
     super(`Invalid file-label: ${message}`);

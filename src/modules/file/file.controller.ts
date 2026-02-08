@@ -30,7 +30,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
-@ApiTags('files')
+@ApiTags('Files')
 @Controller('files')
 export class FileController {
   constructor(private readonly fileService: FileService) {}

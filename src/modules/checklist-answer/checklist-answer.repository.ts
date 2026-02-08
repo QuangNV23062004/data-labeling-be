@@ -6,6 +6,7 @@ import {
   FindOptionsWhere,
   In,
   IsNull,
+  MoreThan,
   Repository,
 } from 'typeorm';
 import { ChecklistAnswerEntity } from './checklist-answer.entity';
@@ -50,6 +51,36 @@ export class ChecklistAnswerRepository extends BaseRepository<ChecklistAnswerEnt
     }
 
     return repository.findOne({ where: whereClause });
+  }
+
+  async FindByIdWithLock(
+    id: string,
+    includeDeleted: boolean = false,
+    em?: EntityManager,
+  ): Promise<ChecklistAnswerEntity | null> {
+    const repository = await this.GetRepository(em);
+    return repository.findOne({
+      where: includeDeleted ? { id } : { id, deletedAt: IsNull() },
+      lock: { mode: 'pessimistic_write' },
+      ...(includeDeleted && { withDeleted: true }),
+    });
+  }
+
+  async HasLaterAttempts(
+    fileLabelId: string,
+    labelAttemptNumber: number,
+    includeDeleted: boolean = false,
+    em?: EntityManager,
+  ): Promise<ChecklistAnswerEntity | null> {
+    const repository = await this.GetRepository(em);
+    return repository.findOne({
+      where: {
+        fileLabelId,
+        labelAttemptNumber: MoreThan(labelAttemptNumber),
+        ...(!includeDeleted && { deletedAt: IsNull() }),
+      },
+      ...(includeDeleted && { withDeleted: true }),
+    });
   }
 
   async FindAll(
@@ -235,7 +266,7 @@ export class ChecklistAnswerRepository extends BaseRepository<ChecklistAnswerEnt
   }
 
   async GetLatestAttemptedLabelCounts(
-    fileLabelIds: string[],
+    fileLabelId: string,
     em?: EntityManager,
   ): Promise<{
     round: number;
@@ -244,19 +275,18 @@ export class ChecklistAnswerRepository extends BaseRepository<ChecklistAnswerEnt
   }> {
     const repository = await this.GetRepository(em);
 
-    const qb = repository.createQueryBuilder('checklist_answer');
-
-    qb.select('checklist_answer.file_label_id', 'fileLabelId')
-      .where('checklist_answer.file_label_id IN (:...fileLabelIds)', {
-        fileLabelIds,
-      })
+    const latestAttempt = await repository
+      .createQueryBuilder('checklist_answer')
+      .where('checklist_answer.file_label_id = :fileLabelId', { fileLabelId })
       .andWhere('checklist_answer.deletedAt IS NULL')
-      .groupBy('checklist_answer.file_label_id');
+      .orderBy('checklist_answer.label_attempt_number', 'DESC')
+      .addOrderBy('checklist_answer.created_at', 'DESC')
+      .limit(1)
+      .getOne();
 
-    const result = await qb.getOne();
-    const round = result ? result.labelAttemptNumber : 0;
-    const role = result ? result.roleType : null;
-    const type = result ? result.answerType : null;
+    const round = latestAttempt?.labelAttemptNumber ?? 0;
+    const role = latestAttempt?.roleType ?? null;
+    const type = latestAttempt?.answerType ?? null;
 
     return { round, role, type };
   }

@@ -20,6 +20,7 @@ import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.enti
 @Index('idx_annotator_id', ['annotatorId'])
 @Index('idx_reviewer_id', ['reviewerId'])
 @Index('idx_status', ['status'])
+@Index('idx_unique_file_label', ['fileId', 'labelId'], { unique: true })
 export class FileLabelEntity extends BaseEntity {
   @Column({ name: 'file_id', type: 'uuid', nullable: false })
   fileId: string;

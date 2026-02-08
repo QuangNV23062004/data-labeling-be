@@ -25,7 +25,7 @@ import {
 } from '@nestjs/swagger';
 
 // Admin create and update and delete works for debug purpose, use annotator and reviewer for record in file label from token
-@ApiTags('file-labels')
+@ApiTags('File Labels')
 @Controller('file-labels')
 export class FileLabelController {
   constructor(private readonly fileLabelService: FileLabelService) {}

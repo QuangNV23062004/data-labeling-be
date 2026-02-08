@@ -10,6 +10,11 @@ import { AnswerData } from './interface/answer-data.interface';
 @Index('idx_checklistanswers_file_label_id', ['fileLabelId'])
 @Index('idx_checklistanswers_answer_by_id', ['answerById'])
 @Index('idx_checklistanswers_role_type', ['roleType'])
+@Index(
+  'idx_unique_attempt_role',
+  ['fileLabelId', 'labelAttemptNumber', 'roleType'],
+  { unique: true },
+)
 export class ChecklistAnswerEntity extends BaseEntity {
   @Column({ name: 'file_label_id', type: 'uuid', nullable: false })
   fileLabelId: string;
