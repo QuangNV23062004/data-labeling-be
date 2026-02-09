@@ -15,5 +15,6 @@ import { LabelModule } from '../label/label.module';
   ],
   controllers: [FileLabelController],
   providers: [FileLabelService, FileLabelRepository],
+  exports: [FileLabelService, FileLabelRepository],
 })
 export class FileLabelModule {}

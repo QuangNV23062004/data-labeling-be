@@ -29,7 +29,7 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
     entityManager?: EntityManager,
   ): Promise<ProjectEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    console.log(id);
+    // console.log(id);
     const whereCondition: any = { id: id };
     if (!includeDeleted) {
       whereCondition.deletedAt = IsNull();

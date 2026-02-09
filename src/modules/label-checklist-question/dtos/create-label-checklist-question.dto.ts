@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -24,13 +25,6 @@ export class CreateLabelChecklistQuestionDto {
   @IsUUID()
   labelId?: string;
 
-  @ApiPropertyOptional({
-    description: 'ID of the parent question (for reviewers)',
-  })
-  @IsOptional()
-  @IsUUID()
-  parentId?: string;
-
   @ApiProperty({
     description: 'Role of the question',
     enum: [Role.ANNOTATOR, Role.REVIEWER],
@@ -38,6 +32,11 @@ export class CreateLabelChecklistQuestionDto {
   @IsNotEmpty()
   @IsEnum([Role.ANNOTATOR, Role.REVIEWER])
   roleEnum: Role;
+
+  @ApiPropertyOptional({ description: 'Indicates if the question is required' })
+  @IsBoolean()
+  @IsOptional()
+  isRequired?: boolean;
 
   @ApiPropertyOptional({
     description: 'ID of the user who created the question',

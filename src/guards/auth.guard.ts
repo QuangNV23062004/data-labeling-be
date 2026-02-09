@@ -39,7 +39,7 @@ export class AuthGuard implements CanActivate {
 
       request.accountInfo = payload;
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       throw new UnauthorizedException('Invalid or expired token');
     }
 

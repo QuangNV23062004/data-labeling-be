@@ -13,5 +13,6 @@ import { LabelModule } from '../label/label.module';
   ],
   controllers: [LabelChecklistQuestionController],
   providers: [LabelChecklistQuestionService, LabelChecklistQuestionRepository],
+  exports: [LabelChecklistQuestionService, LabelChecklistQuestionRepository],
 })
 export class LabelChecklistQuestionModule {}

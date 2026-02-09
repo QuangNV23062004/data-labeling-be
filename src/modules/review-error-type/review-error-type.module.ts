@@ -9,5 +9,6 @@ import { ReviewErrorTypeEntity } from './review-error-type.entity';
   imports: [TypeOrmModule.forFeature([ReviewErrorTypeEntity])],
   controllers: [ReviewErrorTypeController],
   providers: [ReviewErrorTypeService, ReviewErrorTypeRepository],
+  exports: [ReviewErrorTypeService, ReviewErrorTypeRepository],
 })
 export class ReviewErrorTypeModule {}

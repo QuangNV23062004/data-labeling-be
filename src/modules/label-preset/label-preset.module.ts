@@ -10,5 +10,6 @@ import { LabelModule } from '../label/label.module';
   imports: [TypeOrmModule.forFeature([LabelPresetEntity]), LabelModule],
   controllers: [LabelPresetController],
   providers: [LabelPresetService, LabelPresetRepository],
+  exports: [LabelPresetService, LabelPresetRepository],
 })
 export class LabelPresetModule {}

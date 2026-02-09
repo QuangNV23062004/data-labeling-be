@@ -16,8 +16,6 @@ export class ProjectInstructionEntity extends BaseEntity {
   title: string;
 
   @Column({ name: 'content', type: 'text' })
-  content: string;
-
   @Column({ name: 'attachment_url', type: 'text', nullable: true })
   attachmentUrl: string | null;
 }

@@ -89,3 +89,31 @@ export class ProjectTypeFileTypeMismatchException extends BadRequestException {
     );
   }
 }
+
+export class StaffAssignedToFileNotFoundException extends NotFoundException {
+  constructor(
+    staffId: string,
+    type: 'annotator' | 'reviewer',
+    fileId?: string,
+  ) {
+    super(
+      `Staff member with ID "${staffId}" as ${type}"${fileId ? ` assigned to file with ID "${fileId}"` : ''}" not found`,
+    );
+  }
+}
+
+export class StaffAssignedToFileInvalidRoleException extends BadRequestException {
+  constructor(
+    staffId: string,
+    expectedRole: string,
+    actualRole: string,
+    type: 'annotator' | 'reviewer',
+    fileId?: string,
+  ) {
+    super(
+      `Staff member with ID "${staffId}" assigned as ${type}"${
+        fileId ? ` to file with ID "${fileId}"` : ''
+      }" has invalid role. Expected: "${expectedRole}", Actual: "${actualRole}"`,
+    );
+  }
+}

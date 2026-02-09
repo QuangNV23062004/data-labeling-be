@@ -17,7 +17,8 @@ import { FileLabelEntity } from '../file-label/file-label.entity';
 @Entity({ name: 'files' })
 @Index('idx_file_project_id', ['projectId'])
 @Index('idx_file_uploaded_by_id', ['uploadedById'])
-@Index('idx_file_task_id', ['taskId'])
+@Index('idx_file_annotator_id', ['annotatorId'])
+@Index('idx_file_reviewer_id', ['reviewerId'])
 export class FileEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid', nullable: false })
   projectId: string;
@@ -50,16 +51,19 @@ export class FileEntity extends BaseEntity {
   @JoinColumn({ name: 'uploaded_by_id' })
   uploadedBy: AccountEntity;
 
-  //may be add status to track ?
+  @Column({ name: 'annotator_id', type: 'uuid', nullable: true })
+  annotatorId: string | null;
 
-  @Column({ name: 'task_id', type: 'uuid', nullable: true })
-  taskId: string | null;
+  @ManyToOne(() => AccountEntity, (account) => account.id)
+  @JoinColumn({ name: 'annotator_id' })
+  annotator: AccountEntity | null;
 
-  @ManyToOne(() => ProjectTaskEntity, (task) => task.files, {
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'task_id' })
-  projectTask: ProjectTaskEntity | null;
+  @Column({ name: 'reviewer_id', type: 'uuid', nullable: true })
+  reviewerId: string | null;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id)
+  @JoinColumn({ name: 'reviewer_id' })
+  reviewer: AccountEntity | null;
 
   @OneToMany(() => FileLabelEntity, (fileLabel) => fileLabel.file)
   fileLabels: FileLabelEntity[];

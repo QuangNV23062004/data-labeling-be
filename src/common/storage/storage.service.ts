@@ -149,7 +149,7 @@ export class StorageService {
   }
 
   async deleteBlob(filePaths: string[]) {
-    console.log('deleted blob is called');
+    // console.log('deleted blob is called');
     const blobSasUrl = this.getBlobSasUrl();
     const blobSasToken = this.getBlobSasToken();
     const containerName = this.getBlobContainerName();
@@ -160,9 +160,9 @@ export class StorageService {
     const containerClient = blobServiceClient.getContainerClient(containerName);
 
     for (const filePathOrUrl of filePaths) {
-      console.log('file path:', filePathOrUrl);
+      // console.log('file path:', filePathOrUrl);
       const blobPath = this.extractBlobPath(filePathOrUrl);
-      console.log(`blobPath: ${blobPath}`);
+      // console.log(`blobPath: ${blobPath}`);
       const blobClient = containerClient.getBlobClient(blobPath);
       await blobClient.deleteIfExists();
     }

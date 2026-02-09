@@ -2,13 +2,16 @@ export interface SingleAnswerData {
   questionId: string;
   answer: boolean;
 
-  //store snapshot
+  // Store snapshot of question state at time of answering
   questionName?: string;
   questionDescription?: string;
+  questionIsRequired?: boolean;
+  questionUpdatedAt?: Date; // Track question version/modification time
 
-  //extra notes
+  // Extra notes
   notes?: string;
 }
 export interface AnswerData {
-  answers: SingleAnswerData[];
+  answers: SingleAnswerData[] | [];
+  notes?: string;
 }

@@ -5,9 +5,11 @@ import {
   Min,
   IsIn,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
+import { Role } from 'src/modules/account/enums/role.enum';
 
 export class FilterLabelChecklistQuestionQueryDto extends BasePaginationQueryDto {
   @IsOptional()
@@ -29,6 +31,10 @@ export class FilterLabelChecklistQuestionQueryDto extends BasePaginationQueryDto
   labelId?: string;
 
   @IsOptional()
-  @IsUUID()
-  parentId?: string;
+  @IsBoolean()
+  isRequired?: boolean;
+
+  @IsOptional()
+  @IsIn([Role.ANNOTATOR, Role.REVIEWER])
+  role?: Role;
 }
