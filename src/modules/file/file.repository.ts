@@ -47,9 +47,14 @@ export class FileRepository extends BaseRepository<FileEntity> {
       });
     }
 
-    if (query?.taskId) {
-      qb.andWhere(`file.taskId = :taskId`, {
-        taskId: query.taskId,
+    if (query?.annotatorId) {
+      qb.andWhere(`file.annotatorId = :annotatorId`, {
+        annotatorId: query.annotatorId,
+      });
+    }
+    if (query?.reviewerId) {
+      qb.andWhere(`file.reviewerId = :reviewerId`, {
+        reviewerId: query.reviewerId,
       });
     }
 
@@ -120,9 +125,14 @@ export class FileRepository extends BaseRepository<FileEntity> {
       });
     }
 
-    if (query?.taskId) {
-      qb.andWhere(`file.taskId = :taskId`, {
-        taskId: query.taskId,
+    if (query?.annotatorId) {
+      qb.andWhere(`file.annotatorId = :annotatorId`, {
+        annotatorId: query.annotatorId,
+      });
+    }
+    if (query?.reviewerId) {
+      qb.andWhere(`file.reviewerId = :reviewerId`, {
+        reviewerId: query.reviewerId,
       });
     }
 

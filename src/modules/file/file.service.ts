@@ -14,6 +14,8 @@ import {
   FileNotFoundException,
   FileTypeNotSupportedException,
   ProjectTypeFileTypeMismatchException,
+  StaffAssignedToFileInvalidRoleException,
+  StaffAssignedToFileNotFoundException,
   UnknownFileFormatException,
 } from './exceptions/file-exceptions.exception';
 import { ContentType } from './enums/content-type.enums';
@@ -28,6 +30,8 @@ import { ImageExtension } from './enums/image-extensions.enums';
 import { TextExtension } from './enums/text-extensions.enums';
 import { VideoExtension } from './enums/video-extensions.enums';
 import { AudioExtension } from './enums/audio-extensions.enums';
+import { FileDomain } from './file.domain';
+import { Role } from '../account/enums/role.enum';
 
 @Injectable()
 export class FileService extends BaseService {
@@ -35,49 +39,12 @@ export class FileService extends BaseService {
 
   constructor(
     private readonly repository: FileRepository,
+    private readonly accountRepository: AccountRepository,
     private readonly storageService: StorageService,
     private readonly projectRepository: ProjectRepository,
+    private readonly fileDomain: FileDomain,
   ) {
     super();
-  }
-
-  private checkFileAndProjectType(
-    file: Express.Multer.File,
-    projectType: DataType,
-  ) {
-    let allowExtensions;
-    switch (projectType) {
-      case DataType.IMAGE:
-        allowExtensions = Object.values(ImageExtension);
-        break;
-
-      case DataType.VIDEO:
-        allowExtensions = Object.values(VideoExtension);
-        break;
-
-      case DataType.TEXT:
-        allowExtensions = Object.values(TextExtension);
-        break;
-
-      case DataType.AUDIO:
-        allowExtensions = Object.values(AudioExtension);
-        break;
-      default:
-        allowExtensions = [];
-        break;
-    }
-    const extension = file.originalname.split('.').pop()?.toLowerCase();
-    if (!extension) {
-      throw new UnknownFileFormatException(file.originalname);
-    }
-
-    if (!allowExtensions.includes(extension)) {
-      throw new ProjectTypeFileTypeMismatchException(
-        projectType,
-        extension as string,
-      );
-    }
-    return true;
   }
 
   async FindAll(
@@ -152,21 +119,20 @@ export class FileService extends BaseService {
         transactionalEntityManager,
       );
 
-      if (!project) {
-        throw new ProjectNotFoundException(data.projectId);
-      }
+      this.fileDomain.validateProjectToCreateFile(project, data);
 
-      if (project.projectStatus !== ProjectStatus.DRAFT) {
-        throw new CanOnlyUploadFilesToDraftProjectsException(data.projectId);
-      }
-
-      this.checkFileAndProjectType(file, project.dataType);
+      this.fileDomain.checkFileAndProjectType(
+        file,
+        project?.dataType as DataType,
+      );
 
       const contentType =
         ContentType[extension.toUpperCase() as keyof typeof ContentType];
+
       if (!contentType) {
         throw new UnknownFileFormatException(file.originalname);
       }
+
       entity.contentType = contentType;
       entity.fileName = file.originalname;
       entity.fileSize = file.size;
@@ -175,13 +141,34 @@ export class FileService extends BaseService {
       entity.uploadedById = accountInfo?.sub as string;
 
       if (data.annotatorId !== undefined) {
+        const annotator = await this.accountRepository.FindById(
+          data.annotatorId,
+          false,
+          transactionalEntityManager,
+        );
+
+        this.fileDomain.validateAnnotator(
+          annotator,
+          data.annotatorId,
+          undefined,
+        );
+
         entity.annotatorId = data.annotatorId;
+        entity.annotator = annotator;
       }
+
       if (data.reviewerId !== undefined) {
-        if (data.reviewerId) {
-          entity.reviewerId = data.reviewerId;
-        }
+        const reviewer = await this.accountRepository.FindById(
+          data.reviewerId,
+          false,
+          transactionalEntityManager,
+        );
+        this.fileDomain.validateReviewer(reviewer, data.reviewerId, undefined);
+
+        entity.reviewerId = data.reviewerId;
+        entity.reviewer = reviewer;
       }
+
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -239,20 +226,40 @@ export class FileService extends BaseService {
           // Check compatibility: Use the new file if provided, otherwise use the existing file's extension
           const fileToCheck =
             file || ({ originalname: entity.fileName } as Express.Multer.File); // Mock file object for existing file
-          this.checkFileAndProjectType(fileToCheck, entity.project?.dataType);
+          this.fileDomain.checkFileAndProjectType(
+            fileToCheck,
+            entity.project?.dataType,
+          );
         }
         Object.assign(entity, data);
-        console.log(data);
+        // console.log(data);
 
         if (data?.annotatorId !== undefined) {
+          const annotator = await this.accountRepository.FindById(
+            data.annotatorId,
+            false,
+            transactionalEntityManager,
+          );
+
+          this.fileDomain.validateAnnotator(annotator, data.annotatorId, id);
+
           entity.annotatorId = data.annotatorId;
+          entity.annotator = annotator;
         }
 
         if (data?.reviewerId !== undefined) {
+          const reviewer = await this.accountRepository.FindById(
+            data.reviewerId,
+            false,
+            transactionalEntityManager,
+          );
+
+          this.fileDomain.validateReviewer(reviewer, data.reviewerId, id);
+
           entity.reviewerId = data.reviewerId;
         }
 
-        console.log(entity);
+        // console.log(entity);
         const result = await this.repository.Update(
           entity,
           transactionalEntityManager,
@@ -263,7 +270,13 @@ export class FileService extends BaseService {
 
     //only delete old file when transaction success
     if (oldFile) {
-      await this.storageService.deleteBlob([oldFile]);
+      try {
+        await this.storageService.deleteBlob([oldFile]);
+      } catch (error) {
+        this.logger.error(
+          `Failed to delete blob for file ID "${id}" at "${oldFile}": ${error.message}`,
+        );
+      }
     }
     return transactionResult;
   }
@@ -306,28 +319,20 @@ export class FileService extends BaseService {
           throw new CannotHardDeleteAFileWithExistingFileLabelsException(id);
         }
 
-        // Delete blob from Azure storage
-        try {
-          this.logger.log(
-            `Attempting to delete blob for file ${id}: ${entity.fileUrl}`,
-          );
-          await this.storageService.deleteBlob([entity.fileUrl]);
-          this.logger.log(`Successfully deleted blob for file ${id}`);
-        } catch (error) {
-          this.logger.error(
-            `Failed to delete blob for file ${id}: ${error.message}`,
-            error.stack,
-          );
-          throw error;
-        }
         oldFile = entity.fileUrl;
 
         return this.repository.HardDelete(id, transactionalEntityManager);
       },
     );
 
-    if (oldFile) {
-      await this.storageService.deleteBlob([oldFile]);
+    try {
+      if (oldFile) {
+        await this.storageService.deleteBlob([oldFile]);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete blob for file ID "${id}" at "${oldFile}": ${error.message}`,
+      );
     }
     return transactionResult;
   }
@@ -345,12 +350,7 @@ export class FileService extends BaseService {
         throw new FileNotFoundException(id);
       }
 
-      if (entity?.project?.deletedAt != null) {
-        throw new CannotRestoreAFileInsideADeletedProjectException(
-          id,
-          entity.projectId,
-        );
-      }
+      this.fileDomain.validateFilesFromDeletedProject(entity);
 
       return this.repository.Restore(id, transactionalEntityManager);
     });

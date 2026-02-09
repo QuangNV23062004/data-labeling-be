@@ -54,7 +54,7 @@ export class ChecklistAnswerController {
         answerData: { answers: [], notes: '' },
         answerType: 'SUBMIT',
         roleType: 'ANNOTATOR',
-        labelAttemptNumber: 0,
+        labelAttemptNumber: 1,
         createdAt: '2026-02-08T00:00:00Z',
       },
     },
@@ -112,7 +112,8 @@ export class ChecklistAnswerController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Cannot update - answer already approved or not latest attempt',
+    description:
+      'Cannot update - answer already approved or not latest attempt',
   })
   async Update(
     @Body() updateDto: UpdateChecklistAnswerDto,
@@ -130,7 +131,8 @@ export class ChecklistAnswerController {
   @Roles(Role.ANNOTATOR, Role.REVIEWER, Role.MANAGER, Role.ADMIN)
   @ApiOperation({
     summary: 'Get all checklist answers (non-paginated)',
-    description: 'Retrieve all checklist answers matching the filters. Returns complete list without pagination.',
+    description:
+      'Retrieve all checklist answers matching the filters. Returns complete list without pagination.',
   })
   @ApiQuery({
     name: 'fileLabelId',
@@ -313,7 +315,8 @@ export class ChecklistAnswerController {
   @Roles(Role.ADMIN)
   @ApiOperation({
     summary: 'Restore a soft-deleted checklist answer',
-    description: 'Restore a previously soft-deleted checklist answer. Admin only.',
+    description:
+      'Restore a previously soft-deleted checklist answer. Admin only.',
   })
   @ApiParam({
     name: 'id',

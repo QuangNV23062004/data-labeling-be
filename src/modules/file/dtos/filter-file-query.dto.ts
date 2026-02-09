@@ -58,12 +58,20 @@ export class FilterFileQueryDto extends BasePaginationQueryDto {
   uploadedById?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by task ID',
+    description: 'Filter by annotator ID',
     example: '123e4567-e89b-12d3-a456-426614174002',
   })
   @IsOptional()
   @IsUUID()
-  taskId?: string;
+  annotatorId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by reviewer ID',
+    example: '123e4567-e89b-12d3-a456-426614174002',
+  })
+  @IsOptional()
+  @IsUUID()
+  reviewerId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by content type',

@@ -152,6 +152,17 @@ export class FileLabelService extends BaseService {
       if (accountInfo?.role === Role.REVIEWER) {
         entity.reviewerId = accountInfo?.sub as string;
       }
+
+      //allow admin to assign annotator and reviewer manually
+      if (accountInfo?.role === Role.ADMIN) {
+        if (!data.annotatorId) {
+          throw new MissingRequiredFileLabelFieldException('annotatorId');
+        }
+        entity.annotatorId = data.annotatorId;
+        if (data.reviewerId) {
+          entity.reviewerId = data.reviewerId;
+        }
+      }
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -181,8 +192,7 @@ export class FileLabelService extends BaseService {
         throw new FileAccessNotAllowedException(entity.file.id);
       }
 
-      Object.assign(entity, data);
-
+      // Check for duplicate file-label pair before mutating entity
       if (
         (data?.fileId && data.fileId !== entity.fileId) ||
         (data?.labelId && data.labelId !== entity.labelId)
@@ -199,6 +209,8 @@ export class FileLabelService extends BaseService {
           throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
         }
       }
+
+      Object.assign(entity, data);
       if (data?.fileId) {
         const file = await this.fileRepository.FindById(
           data.fileId,

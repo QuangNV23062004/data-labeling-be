@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -33,6 +34,7 @@ export class CreateLabelChecklistQuestionDto {
   roleEnum: Role;
 
   @ApiPropertyOptional({ description: 'Indicates if the question is required' })
+  @IsBoolean()
   @IsOptional()
   isRequired?: boolean;
 

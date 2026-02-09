@@ -70,8 +70,14 @@ export class ChecklistAnswerService extends BaseService {
       entity.fileLabelId = fileLabel.id;
       entity.fileLabel = fileLabel;
       // Assign role and owner
-      entity.roleType = accountInfo?.role as Role;
-      entity.answerById = accountInfo?.sub as string;
+      if ([Role.ANNOTATOR, Role.REVIEWER].includes(accountInfo?.role as Role)) {
+        entity.roleType = accountInfo?.role as Role;
+        entity.answerById = accountInfo?.sub as string;
+      } else if ([Role.ADMIN].includes(accountInfo?.role as Role)) {
+        // Admin must specify roleType and answerById in DTO => to test
+        entity.roleType = createDto.roleType as Role;
+        entity.answerById = createDto.answerById as string;
+      }
 
       //round cta and role check, follow up flow
       const { round, role, type } =

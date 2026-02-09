@@ -6,6 +6,7 @@ import { FileRepository } from './file.repository';
 import { FileEntity } from './file.entity';
 import { StorageModule } from 'src/common/storage/storage.module';
 import { ProjectModule } from '../project/project.module';
+import { FileDomain } from './file.domain';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { ProjectModule } from '../project/project.module';
     ProjectModule,
   ],
   controllers: [FileController],
-  providers: [FileService, FileRepository],
-  exports: [FileService, FileRepository],
+  providers: [FileService, FileRepository, FileDomain],
+  exports: [FileService, FileRepository, FileDomain],
 })
 export class FileModule {}

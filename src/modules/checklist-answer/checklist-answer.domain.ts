@@ -167,6 +167,8 @@ export class ChecklistAnswerDomain {
       // Count answered required questions
       if (requiredQuestionIds.has(currentQuestionId)) {
         answeredRequiredCount++;
+        //fix vulnerability issue: remove from set to prevent double counting
+        requiredQuestionIds.delete(currentQuestionId);
       }
     });
 

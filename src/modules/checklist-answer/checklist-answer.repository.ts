@@ -104,7 +104,7 @@ export class ChecklistAnswerRepository extends BaseRepository<ChecklistAnswerEnt
     }
 
     if (query?.fileLabelId) {
-      qb.andWhere('file_label = :fileLabelId', {
+      qb.andWhere('file_label.id = :fileLabelId', {
         fileLabelId: query.fileLabelId,
       });
     }
@@ -160,7 +160,7 @@ export class ChecklistAnswerRepository extends BaseRepository<ChecklistAnswerEnt
     }
 
     if (query?.fileLabelId) {
-      qb.andWhere('file_label = :fileLabelId', {
+      qb.andWhere('file_label.id = :fileLabelId', {
         fileLabelId: query.fileLabelId,
       });
     }

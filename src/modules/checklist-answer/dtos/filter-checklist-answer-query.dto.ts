@@ -51,7 +51,7 @@ export class FilterChecklistAnswerQueryDto extends BasePaginationQueryDto {
     description: 'Filter by role type',
   })
   @IsOptional()
-  @IsEnum([Role.ANNOTATOR, Role.REVIEWER])
+  @IsIn([Role.ANNOTATOR, Role.REVIEWER])
   roleType?: Role;
 
   @ApiProperty({

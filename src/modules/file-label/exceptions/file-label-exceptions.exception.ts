@@ -2,6 +2,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 
 export class FileLabelNotFoundException extends NotFoundException {
@@ -36,7 +37,7 @@ export class MissingRequiredFileLabelFieldException extends BadRequestException 
   }
 }
 
-export class FileAccessNotAllowedException extends BadRequestException {
+export class FileAccessNotAllowedException extends ForbiddenException {
   constructor(message: string) {
     super(
       `File access not allowed: ${message}, you are not assigned to this file as a annotator or reviewer`,
