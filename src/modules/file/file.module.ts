@@ -7,12 +7,14 @@ import { FileEntity } from './file.entity';
 import { StorageModule } from 'src/common/storage/storage.module';
 import { ProjectModule } from '../project/project.module';
 import { FileDomain } from './file.domain';
+import { AccountModule } from '../account/account.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([FileEntity]),
     StorageModule,
     ProjectModule,
+    AccountModule,
   ],
   controllers: [FileController],
   providers: [FileService, FileRepository, FileDomain],

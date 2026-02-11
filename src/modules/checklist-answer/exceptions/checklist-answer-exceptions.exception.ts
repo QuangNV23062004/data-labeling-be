@@ -113,3 +113,11 @@ export class CannotMutateOtherUsersChecklistAnswerException extends BadRequestEx
     );
   }
 }
+
+export class CannotDeleteApprovedChecklistAnswerException extends BadRequestException {
+  constructor(id: string) {
+    super(
+      `Cannot delete checklist answer with ID "${id}" because it has been approved`,
+    );
+  }
+}

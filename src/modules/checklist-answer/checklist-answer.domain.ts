@@ -110,7 +110,7 @@ export class ChecklistAnswerDomain {
     }
   }
 
-  async validateAnswerData(
+  validateAnswerData(
     questions: LabelChecklistQuestionEntity[],
     entity: ChecklistAnswerEntity,
     fileLabel: FileLabelEntity,
@@ -173,7 +173,12 @@ export class ChecklistAnswerDomain {
     });
 
     // Verify all required questions are answered
-    if (requiredQuestionIds.size !== answeredRequiredCount) {
+    if (
+      requiredQuestionIds.size > 0 &&
+      requiredQuestionIds.size !== answeredRequiredCount
+    ) {
+      console.log(requiredQuestionIds);
+
       throw new InsufficientAnswerProvidedForRequiredQuestions();
     }
 
@@ -279,14 +284,18 @@ export class ChecklistAnswerDomain {
     newAnswerType: AnswerTypeEnum,
   ) {
     // Only reviewers can update answerType
-    if (entity.roleType !== Role.REVIEWER) {
+    if (
+      entity.roleType !== Role.REVIEWER &&
+      entity.answerType !== newAnswerType
+    ) {
       throw new OnlyReviewerChecklistSupportUpdateAnswerType(entity.id);
     }
 
     // Can only transition from REJECTED → APPROVED
     if (
-      entity.answerType !== AnswerTypeEnum.REJECTED ||
-      newAnswerType !== AnswerTypeEnum.APPROVED
+      entity.answerType !== newAnswerType &&
+      (entity.answerType !== AnswerTypeEnum.REJECTED ||
+        newAnswerType !== AnswerTypeEnum.APPROVED)
     ) {
       throw new NotAllowedUpdateAnswerTypeInChecklistLifeCycle(newAnswerType, [
         AnswerTypeEnum.APPROVED,

@@ -8,6 +8,7 @@ import {
   ChecklistAnswerNotFoundException,
   CannotMutateOtherUsersChecklistAnswerException,
   CannotUpdateCheclistAnswerIfNotLatest,
+  CannotDeleteApprovedChecklistAnswerException,
 } from './exceptions/checklist-answer-exceptions.exception';
 import { AccountInfo } from 'src/interfaces/request';
 import { FileLabelRepository } from '../file-label/file-label.repository';
@@ -239,6 +240,9 @@ export class ChecklistAnswerService extends BaseService {
         entity.id,
       );
 
+      if (entity.answerType === AnswerTypeEnum.APPROVED) {
+        throw new CannotDeleteApprovedChecklistAnswerException(id);
+      }
       await this.checklistAnswerRepository.SoftDelete(
         id,
         transactionalEntityManager,
