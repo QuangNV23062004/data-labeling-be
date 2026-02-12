@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotImplementedException,
   Param,
   Patch,
   Post,
@@ -136,5 +137,13 @@ export class FileLabelController {
       includeDeleted,
       req?.accountInfo,
     );
+  }
+
+  @Post('annotator/submit')
+  @Roles(Role.ANNOTATOR)
+  @ApiOperation({ summary: 'Submit file labels by the annotator' })
+  async SubmitFileLabels(@Req() request: IAuthenticatedRequest) {
+    // Implementation for submitting file labels, checklist answer from annotator in a single transaction
+    throw new NotImplementedException();
   }
 }

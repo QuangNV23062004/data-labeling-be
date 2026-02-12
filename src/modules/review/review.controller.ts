@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotImplementedException,
   Param,
   Patch,
   Post,
@@ -215,5 +216,13 @@ export class ReviewController {
       includeDeleted,
       request?.accountInfo,
     );
+  }
+
+  @Post('reviewer/submit')
+  @Roles(Role.REVIEWER)
+  @ApiOperation({ summary: 'Submit reviews by the reviewer' })
+  async SubmitReviews(@Req() request: IAuthenticatedRequest) {
+    // Implementation for submitting reviews, decision from reviewer, review errors, checklist answer in a single transaction
+    throw new NotImplementedException();
   }
 }
