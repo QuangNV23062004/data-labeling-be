@@ -173,12 +173,7 @@ export class ChecklistAnswerDomain {
     });
 
     // Verify all required questions are answered
-    if (
-      requiredQuestionIds.size > 0 &&
-      requiredQuestionIds.size !== answeredRequiredCount
-    ) {
-      console.log(requiredQuestionIds);
-
+    if (requiredQuestionIds.size > 0) {
       throw new InsufficientAnswerProvidedForRequiredQuestions();
     }
 

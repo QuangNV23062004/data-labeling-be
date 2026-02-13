@@ -117,6 +117,18 @@ export class ReviewErrorService extends BaseService {
       // Validate that the review error exists
       this.reviewErrorDomain.validateReviewErrorExists(entity, id);
 
+      // Validate access to the existing parent review
+      const currentReview = await this.reviewRepository.FindById(
+        entity!.reviewId,
+        false,
+        transactionalEntityManager,
+      );
+      this.reviewErrorDomain.validateReviewAccess(
+        { reviewId: entity!.reviewId } as CreateReviewErrorDto,
+        currentReview,
+        accountInfo,
+      );
+
       // Validate that the review error can be modified (review not approved)
       this.reviewErrorDomain.validateReviewErrorMutability(entity!, 'update');
 
@@ -184,6 +196,18 @@ export class ReviewErrorService extends BaseService {
 
       // Validate that the review error exists
       this.reviewErrorDomain.validateReviewErrorExists(entity, id);
+
+      // Validate access to the existing parent review
+      const currentReview = await this.reviewRepository.FindById(
+        entity!.reviewId,
+        false,
+        transactionalEntityManager,
+      );
+      this.reviewErrorDomain.validateReviewAccess(
+        { reviewId: entity!.reviewId } as CreateReviewErrorDto,
+        currentReview,
+        accountInfo,
+      );
 
       // Validate that the review error can be deleted (review not approved)
       this.reviewErrorDomain.validateReviewErrorMutability(entity!, 'delete');

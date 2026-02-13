@@ -28,6 +28,12 @@ export class CannotUpdateOtherReviewerException extends BadRequestException {
   }
 }
 
+export class CannotDeleteOtherReviewerException extends BadRequestException {
+  constructor() {
+    super(`Cannot delete review assigned to another reviewer`);
+  }
+}
+
 export class CannotDeleteApprovedReviewException extends BadRequestException {
   constructor() {
     super(`Cannot delete a review that has already been approved`);

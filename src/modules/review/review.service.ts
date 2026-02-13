@@ -9,6 +9,7 @@ import { Role } from '../account/enums/role.enum';
 import {
   CannotCreateReviewLinkedToAnnotatorChecklistAnswerException,
   CannotDeleteApprovedReviewException,
+  CannotDeleteOtherReviewerException,
   CannotHardDeleteReviewWithErrorsException,
   CannotRestoreReviewWithDeletedChecklistAnswerException,
   CannotUpdateApprovedReviewException,
@@ -140,17 +141,24 @@ export class ReviewService extends BaseService {
       if (accountInfo?.role === Role.REVIEWER) {
         entity.reviewerId = accountInfo?.sub as string;
       }
-      if (accountInfo?.role === Role.ADMIN && dto.reviewerId) {
+      if (accountInfo?.role === Role.ADMIN) {
+        if (!dto.reviewerId) {
+          throw new InvalidReviewException(
+            'Field "reviewerId" is required when creating a review as an admin',
+          );
+        }
         const reviewer = await this.accountRepository.FindById(
           dto.reviewerId,
           false,
           transactionalEntityManager,
         );
+
         if (!reviewer) {
-          throw new ReviewNotFoundException(
+          throw new InvalidReviewException(
             `Reviewer with ID "${dto.reviewerId}" not found`,
           );
         }
+
         if (reviewer.role !== Role.REVIEWER) {
           throw new InvalidReviewException(
             `Account with ID "${dto.reviewerId}" is not a reviewer`,
@@ -263,7 +271,7 @@ export class ReviewService extends BaseService {
         entity.reviewerId !== accountInfo?.sub &&
         accountInfo?.role !== Role.ADMIN
       ) {
-        throw new CannotUpdateOtherReviewerException();
+        throw new CannotDeleteOtherReviewerException();
       }
 
       if (entity.decision === Decision.APPROVED) {
@@ -286,7 +294,7 @@ export class ReviewService extends BaseService {
         throw new ReviewNotFoundException(id);
       }
 
-      if (entity?.checklistAnswer?.deletedAt !== null) {
+      if (entity.checklistAnswer && entity.checklistAnswer.deletedAt !== null) {
         throw new CannotRestoreReviewWithDeletedChecklistAnswerException(
           entity.checklistAnswer.id,
         );

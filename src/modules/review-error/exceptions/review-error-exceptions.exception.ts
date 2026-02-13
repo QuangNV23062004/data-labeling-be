@@ -42,7 +42,7 @@ export class ReviewErrorCannotBeMutatedException extends BadRequestException {
     mode: 'create' | 'update' | 'delete' | 'restore' = 'update',
   ) {
     super(
-      `ReviewError"${id ? ` with ID  ${id}` : ''}" cannot be ${mode}d because its review with ID "${reviewId}" has been ${status}.`,
+      `ReviewError${id ? ` with ID "${id}"` : ''} cannot be ${mode}d because its review with ID "${reviewId}" has been ${status}.`,
     );
   }
 }

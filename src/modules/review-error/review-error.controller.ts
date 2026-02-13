@@ -193,7 +193,7 @@ export class ReviewErrorController {
   }
 
   @Patch('restore/:id')
-  @Roles(Role.ADMIN, Role.REVIEWER)
+  @Roles(Role.ADMIN) //only admin can restore
   @ApiOperation({
     summary: 'Restore a soft-deleted review error',
     description:
