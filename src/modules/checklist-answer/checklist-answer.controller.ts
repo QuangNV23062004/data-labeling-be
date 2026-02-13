@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -338,5 +339,38 @@ export class ChecklistAnswerController {
   })
   async Restore(@Param('id') id: string, @Req() req: IAuthenticatedRequest) {
     return await this.checklistAnswerService.Restore(id, req?.accountInfo);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN, Role.REVIEWER, Role.ANNOTATOR)
+  @ApiOperation({
+    summary: 'delete a checklist answer',
+    description:
+      'Delete a checklist answer. Admin can hard delete, others soft delete.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+    format: 'uuid',
+    description: 'Checklist answer ID to delete',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Checklist answer deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Checklist answer not found',
+  })
+  async Delete(
+    @Param('id') id: string,
+    @Query('type') type: 'soft' | 'hard' = 'soft',
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    if (type === 'hard') {
+      return await this.checklistAnswerService.HardDelete(id, req?.accountInfo);
+    }
+
+    return await this.checklistAnswerService.SoftDelete(id, req?.accountInfo);
   }
 }

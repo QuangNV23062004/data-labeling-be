@@ -21,40 +21,53 @@ export class ProjectInstructionService {
     dto: CreateProjectInstructionDto,
     file?: Express.Multer.File,
   ): Promise<ProjectInstructionEntity> {
+    let entityManager =
+      await this.projectInstructionRepository.GetEntityManager();
+    return await entityManager.transaction(
+      async (transactionalEntityManager) => {
+        // Check if project exists
+        let project = await this.projectRepository.FindById(
+          dto.projectId,
+          false,
+          transactionalEntityManager,
+        );
+        if (!project) {
+          throw new ProjectNotFoundException(dto.projectId);
+        }
 
-    let entityManager = await this.projectInstructionRepository.GetEntityManager();
-    return await entityManager.transaction(async (transactionalEntityManager) => {
-      // Check if project exists
-      let project = await this.projectRepository.FindById(dto.projectId, false, transactionalEntityManager);
-      if (!project) {
-        throw new ProjectNotFoundException(dto.projectId);
-      }
+        // Delete existing instruction if any
+        let existingInstruction =
+          await this.projectInstructionRepository.GetByProjectId(
+            dto.projectId,
+            transactionalEntityManager,
+          );
+        if (existingInstruction)
+          await this.projectInstructionRepository.Delete(
+            existingInstruction.id,
+          );
 
-      // Delete existing instruction if any
-      let existingInstruction = await this.projectInstructionRepository.GetByProjectId(dto.projectId, transactionalEntityManager);
-      if (existingInstruction)
-        await this.projectInstructionRepository.Delete(existingInstruction.id);
+        // Upload file to storage
+        let attachmentUrl = file
+          ? await this.storageService.uploadFilePath(
+              `project-instructions/${dto.projectId}`,
+              file,
+            )
+          : null;
 
-      // Upload file to storage
-      let attachmentUrl = file? await this.storageService.uploadFilePath(
-        `project-instructions/${dto.projectId}`,
-        file,
-      ) : null;
+        // Create project instruction entity
+        let projectInstruction: Partial<ProjectInstructionEntity> = {
+          projectId: dto.projectId,
+          title: dto.title,
+          // content: dto.content,
+          attachmentUrl: attachmentUrl,
+        };
 
-      // Create project instruction entity
-      let projectInstruction: Partial<ProjectInstructionEntity> = {
-        projectId: dto.projectId,
-        title: dto.title,
-        content: dto.content,
-        attachmentUrl: attachmentUrl,
-      };
-
-      return await this.projectInstructionRepository.Create(
-        projectInstruction as ProjectInstructionEntity,
-        transactionalEntityManager
-      );
-    });
-    
+        return await this.projectInstructionRepository.Create(
+          projectInstruction as ProjectInstructionEntity,
+          transactionalEntityManager,
+        );
+      },
+    );
   }
 
   async Update(
@@ -62,55 +75,73 @@ export class ProjectInstructionService {
     dto: UpdateProjectInstructionDto,
     file?: Express.Multer.File,
   ): Promise<ProjectInstructionEntity> {
-    let entityManager = await this.projectInstructionRepository.GetEntityManager();
-    return await entityManager.transaction(async (transactionalEntityManager) => {
-      let entity = await this.projectInstructionRepository.GetByProjectId(projectId, transactionalEntityManager);
-      if (!entity)
-        throw new ProjectInstructionNotFoundException(projectId);
-
-      entity.title = dto.title;
-      entity.content = dto.content;
-
-      // Upload new file if provided
-      if (file) {
-        if (entity.attachmentUrl) {
-          await this.storageService.deleteBlob([entity.attachmentUrl]);
-        }
-        entity.attachmentUrl = await this.storageService.uploadFilePath(
-          `project-instructions/${entity.projectId}`,
-          file,
+    let entityManager =
+      await this.projectInstructionRepository.GetEntityManager();
+    return await entityManager.transaction(
+      async (transactionalEntityManager) => {
+        let entity = await this.projectInstructionRepository.GetByProjectId(
+          projectId,
+          transactionalEntityManager,
         );
-      }
+        if (!entity) throw new ProjectInstructionNotFoundException(projectId);
 
-      return await this.projectInstructionRepository.Update(entity, transactionalEntityManager);
-    });
+        entity.title = dto.title;
+        // entity.content = dto.content;
+
+        // Upload new file if provided
+        if (file) {
+          if (entity.attachmentUrl) {
+            await this.storageService.deleteBlob([entity.attachmentUrl]);
+          }
+          entity.attachmentUrl = await this.storageService.uploadFilePath(
+            `project-instructions/${entity.projectId}`,
+            file,
+          );
+        }
+
+        return await this.projectInstructionRepository.Update(
+          entity,
+          transactionalEntityManager,
+        );
+      },
+    );
   }
 
   async UpdateFile(
     projectId: string,
     file: Express.Multer.File,
   ): Promise<ProjectInstructionEntity> {
-    let entityManager = await this.projectInstructionRepository.GetEntityManager();
-    return await entityManager.transaction(async (transactionalEntityManager) => {
-      let entity = await this.projectInstructionRepository.GetByProjectId(projectId, transactionalEntityManager);
-      if (!entity) {
-        throw new ProjectInstructionNotFoundException(projectId);
-      }
+    let entityManager =
+      await this.projectInstructionRepository.GetEntityManager();
+    return await entityManager.transaction(
+      async (transactionalEntityManager) => {
+        let entity = await this.projectInstructionRepository.GetByProjectId(
+          projectId,
+          transactionalEntityManager,
+        );
+        if (!entity) {
+          throw new ProjectInstructionNotFoundException(projectId);
+        }
 
-      if (entity.attachmentUrl) {
-        await this.storageService.deleteBlob([entity.attachmentUrl]);
-      }
+        if (entity.attachmentUrl) {
+          await this.storageService.deleteBlob([entity.attachmentUrl]);
+        }
 
-      entity.attachmentUrl = await this.storageService.uploadFilePath(
-      `project-instructions/${entity.projectId}`,
-      file,
-      );
-      return await this.projectInstructionRepository.Update(entity, transactionalEntityManager);
-    });
+        entity.attachmentUrl = await this.storageService.uploadFilePath(
+          `project-instructions/${entity.projectId}`,
+          file,
+        );
+        return await this.projectInstructionRepository.Update(
+          entity,
+          transactionalEntityManager,
+        );
+      },
+    );
   }
 
   async GetByProjectId(projectId: string): Promise<ProjectInstructionEntity> {
-    let entity = await this.projectInstructionRepository.GetByProjectId(projectId);
+    let entity =
+      await this.projectInstructionRepository.GetByProjectId(projectId);
     if (!entity) {
       throw new ProjectInstructionNotFoundException(projectId);
     }
@@ -118,10 +149,14 @@ export class ProjectInstructionService {
   }
 
   async DeleteFile(projectId: string): Promise<void> {
-    let entityManager = await this.projectInstructionRepository.GetEntityManager();
+    let entityManager =
+      await this.projectInstructionRepository.GetEntityManager();
     await entityManager.transaction(async (transactionalEntityManager) => {
       // Get project instruction
-      let entity = await this.projectInstructionRepository.GetByProjectId(projectId, transactionalEntityManager);
+      let entity = await this.projectInstructionRepository.GetByProjectId(
+        projectId,
+        transactionalEntityManager,
+      );
       if (!entity) {
         throw new ProjectInstructionNotFoundException(projectId);
       }
@@ -129,7 +164,10 @@ export class ProjectInstructionService {
         await this.storageService.deleteBlob([entity.attachmentUrl]);
       }
       entity.attachmentUrl = null;
-      await this.projectInstructionRepository.Update(entity, transactionalEntityManager);
+      await this.projectInstructionRepository.Update(
+        entity,
+        transactionalEntityManager,
+      );
     });
-  } 
+  }
 }
