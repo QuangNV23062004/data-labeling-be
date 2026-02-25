@@ -60,3 +60,11 @@ export class CannotRestoreFileLabelWithDeletedRelationsException extends BadRequ
     );
   }
 }
+
+export class FileLabelLifeCycleHasCompletedException extends BadRequestException {
+  constructor(id: string, status: string) {
+    super(
+      `Cannot update FileLabel with id ${id} because its lifecycle has completed with status "${status}".`,
+    );
+  }
+}

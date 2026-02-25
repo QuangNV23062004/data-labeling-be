@@ -20,7 +20,23 @@ import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.enti
 @Index('idx_annotator_id', ['annotatorId'])
 @Index('idx_reviewer_id', ['reviewerId'])
 @Index('idx_status', ['status'])
-@Index('idx_unique_file_label', ['fileId', 'labelId'], { unique: true })
+@Index('index_file_label_status', ['fileId', 'labelId', 'status'])
+@Index(
+  'idx_unique_file_label_annotator_reviewer',
+  ['fileId', 'labelId', 'annotatorId', 'reviewerId'],
+  {
+    unique: true,
+    where: `"status" != '${FileLabelStatusEnums.REASSIGNED}' AND "deleted_at" IS NULL AND "reviewer_id" IS NOT NULL`,
+  },
+)
+@Index(
+  'idx_unique_file_label_annotator_no_reviewer',
+  ['fileId', 'labelId', 'annotatorId'],
+  {
+    unique: true,
+    where: `"status" != '${FileLabelStatusEnums.REASSIGNED}' AND "deleted_at" IS NULL AND "reviewer_id" IS NULL`,
+  },
+)
 export class FileLabelEntity extends BaseEntity {
   @Column({ name: 'file_id', type: 'uuid', nullable: false })
   fileId: string;

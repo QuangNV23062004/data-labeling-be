@@ -25,6 +25,16 @@ import { ChecklistAnswerRepository } from '../checklist-answer/checklist-answer.
 import { ChecklistAnswerNotFoundException } from '../checklist-answer/exceptions/checklist-answer-exceptions.exception';
 import { AnswerTypeEnum } from '../checklist-answer/enums/answer-type.enums';
 import { AccountRepository } from '../account/account.repository';
+import { SubmitReviewsDto } from './dtos/submit-reviews.dto';
+import { ChecklistAnswerDomain } from '../checklist-answer/checklist-answer.domain';
+import { FileLabelRepository } from '../file-label/file-label.repository';
+import { FileLabelDomain } from '../file-label/file-label.domain';
+import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
+import { LabelChecklistQuestionRepository } from '../label-checklist-question/label-checklist-question.repository';
+import { ReviewErrorEntity } from '../review-error/review-error.entity';
+import { ReviewErrorRepository } from '../review-error/review-error.repository';
+import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
+import { ReviewErrorTypeRepository } from '../review-error-type/review-error-type.repository';
 
 @Injectable()
 export class ReviewService extends BaseService {
@@ -32,6 +42,12 @@ export class ReviewService extends BaseService {
     private readonly reviewRepository: ReviewRepository,
     private readonly checklistAnswerRepository: ChecklistAnswerRepository,
     private readonly accountRepository: AccountRepository,
+    private readonly checklistAnswerDomain: ChecklistAnswerDomain,
+    private readonly fileLabelRepository: FileLabelRepository,
+    private readonly fileLabelDomain: FileLabelDomain,
+    private readonly labelChecklistQuestionRepository: LabelChecklistQuestionRepository,
+    private readonly reviewErrorRepository: ReviewErrorRepository,
+    private readonly reviewErrorTypeRepository: ReviewErrorTypeRepository,
   ) {
     super();
   }
@@ -89,7 +105,7 @@ export class ReviewService extends BaseService {
 
   async Create(dto: CreateReviewDto, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity: ReviewEntity = new ReviewEntity();
 
       Object.assign(entity, dto);
@@ -174,7 +190,7 @@ export class ReviewService extends BaseService {
 
   async Update(id: string, dto: UpdateReviewDto, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         false,
@@ -257,7 +273,7 @@ export class ReviewService extends BaseService {
 
   async SoftDelete(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         false,
@@ -284,7 +300,7 @@ export class ReviewService extends BaseService {
 
   async Restore(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         true,
@@ -305,7 +321,7 @@ export class ReviewService extends BaseService {
 
   async HardDelete(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       this.validateAdminForHardDelete(accountInfo);
 
       const entity = await this.reviewRepository.FindById(
@@ -325,6 +341,183 @@ export class ReviewService extends BaseService {
         throw new CannotHardDeleteReviewWithErrorsException(id);
       }
       return this.reviewRepository.HardDelete(id, transactionalEntityManager);
+    });
+  }
+
+  async SubmitReview(dto: SubmitReviewsDto, accountInfo?: AccountInfo) {
+    // console.log(JSON.stringify(dto, null, 2));
+    const em = await this.reviewRepository.GetEntityManager();
+    return await em.transaction(async (transactionalEntityManager) => {
+      const fileLabel = await this.fileLabelRepository.FindById(
+        dto.fileLabelId,
+        false,
+        transactionalEntityManager,
+      );
+
+      this.fileLabelDomain.validateFileLabelNotFound(
+        fileLabel,
+        dto.fileLabelId,
+      );
+
+      this.fileLabelDomain.validateFileLabelLifeCycleNotCompleted(fileLabel!);
+
+      this.fileLabelDomain.validateFileAccess(fileLabel!.file, accountInfo);
+
+      const { round, role, type } =
+        await this.checklistAnswerRepository.GetLatestAttemptedLabelCounts(
+          dto.fileLabelId,
+          transactionalEntityManager,
+        );
+
+      let answerType: AnswerTypeEnum;
+      if (dto.decision === Decision.APPROVED) {
+        answerType = AnswerTypeEnum.APPROVED;
+      } else if (dto.decision === Decision.REJECTED) {
+        answerType = AnswerTypeEnum.REJECTED;
+      } else {
+        throw new InvalidReviewException(
+          'Submit review only supports approved or rejected decisions',
+        );
+      }
+
+      this.checklistAnswerDomain.validateAnswerTypeRole(
+        answerType,
+        accountInfo,
+      );
+
+      this.checklistAnswerDomain.validateChecklistAnswerLifeCycle(
+        fileLabel!,
+        answerType,
+        round,
+        role,
+        type,
+        accountInfo,
+      );
+
+      let checklistAnswerEntity = new ChecklistAnswerEntity();
+      checklistAnswerEntity.fileLabelId = dto.fileLabelId;
+      checklistAnswerEntity.fileLabel = fileLabel!;
+      checklistAnswerEntity.answerType = answerType;
+      checklistAnswerEntity.answerData = dto.answerData;
+      checklistAnswerEntity.answerById = accountInfo?.sub as string;
+      checklistAnswerEntity.roleType = accountInfo?.role as Role;
+
+      // console.log(JSON.stringify(checklistAnswerEntity, null, 2));
+      //get all questions for this label target this role
+      const questions = await this.labelChecklistQuestionRepository.FindAll(
+        {
+          labelId: fileLabel!.labelId,
+          role: accountInfo?.role as Role,
+        },
+        false,
+        transactionalEntityManager,
+      );
+
+      this.checklistAnswerDomain.validateAnswerData(
+        questions,
+        checklistAnswerEntity,
+        fileLabel!,
+        dto.answerData,
+        accountInfo,
+      );
+
+      this.checklistAnswerDomain.setAttemptNumber(
+        round,
+        role,
+        checklistAnswerEntity,
+      );
+
+      checklistAnswerEntity = await this.checklistAnswerRepository.Create(
+        checklistAnswerEntity,
+        transactionalEntityManager,
+      );
+
+      let reviewEntity = new ReviewEntity();
+      reviewEntity.fileLabelId = dto.fileLabelId;
+      reviewEntity.reviewerId = accountInfo?.sub as string;
+      reviewEntity.decision = dto.decision;
+      reviewEntity.feedbacks = dto.feedbacks || '';
+      reviewEntity.reviewedAt = new Date();
+      reviewEntity.checklistAnswerId = checklistAnswerEntity.id;
+      reviewEntity = await this.reviewRepository.Create(
+        reviewEntity,
+        transactionalEntityManager,
+      );
+
+      const reviewErrorsInput = Array.isArray(dto.reviewErrors)
+        ? dto.reviewErrors
+        : [];
+
+      if (
+        reviewEntity.decision === Decision.REJECTED &&
+        reviewErrorsInput.length === 0
+      ) {
+        throw new InvalidReviewException(
+          'Rejected review must include at least 1 review error',
+        );
+      }
+
+      if (
+        reviewEntity.decision === Decision.APPROVED &&
+        reviewErrorsInput.length > 0
+      ) {
+        throw new InvalidReviewException(
+          'Cannot create review errors for an approved review',
+        );
+      }
+
+      const reviewErrorTypeIds = reviewErrorsInput.map(
+        (error) => error.reviewErrorTypeId,
+      );
+
+      const uniqueReviewErrorTypeIds = Array.from(new Set(reviewErrorTypeIds));
+      const reviewErrorTypes = await this.reviewErrorTypeRepository.FindByIds(
+        uniqueReviewErrorTypeIds,
+        false,
+        transactionalEntityManager,
+      );
+
+      if (reviewErrorTypes.length !== uniqueReviewErrorTypeIds.length) {
+        const notFoundIds = uniqueReviewErrorTypeIds.filter(
+          (id) => !reviewErrorTypes.some((type) => type.id === id),
+        );
+        throw new InvalidReviewException(
+          `Review error types with IDs ${notFoundIds.join(', ')} not found`,
+        );
+      }
+
+      let reviewErrors = reviewErrorsInput.map((errorDto) => {
+        const reviewError = new ReviewErrorEntity();
+        reviewError.reviewId = reviewEntity.id;
+        reviewError.reviewErrorTypeId = errorDto.reviewErrorTypeId;
+        reviewError.description = errorDto.description || '';
+        reviewError.errorLocation = errorDto.errorLocation || null;
+        return reviewError;
+      });
+      reviewErrors = await this.reviewErrorRepository.CreateBulk(
+        reviewErrors,
+        transactionalEntityManager,
+      );
+      const newStatus =
+        dto.decision === Decision.APPROVED
+          ? FileLabelStatusEnums.APPROVED
+          : FileLabelStatusEnums.REJECTED;
+
+      fileLabel!.status = newStatus;
+      const result = await this.fileLabelRepository.UpdateStatus(
+        fileLabel!.id,
+        newStatus,
+        transactionalEntityManager,
+      );
+      if (!result) {
+        throw new InvalidReviewException(
+          `Failed to update file label status to ${newStatus}`,
+        );
+      }
+
+      reviewEntity.checklistAnswer = checklistAnswerEntity;
+      reviewEntity.reviewErrors = reviewErrors;
+      return reviewEntity;
     });
   }
 }

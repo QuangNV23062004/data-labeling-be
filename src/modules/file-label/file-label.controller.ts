@@ -24,6 +24,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { AnnotatorSubmitDto } from './dtos/annotator-submit.dto';
 
 // Admin create and update and delete works for debug purpose, use annotator and reviewer for record in file label from token
 @ApiTags('File Labels')
@@ -142,8 +143,14 @@ export class FileLabelController {
   @Post('annotator/submit')
   @Roles(Role.ANNOTATOR)
   @ApiOperation({ summary: 'Submit file labels by the annotator' })
-  async SubmitFileLabels(@Req() request: IAuthenticatedRequest) {
+  async AnnotatorSubmit(
+    @Body() annotatorSubmitDto: AnnotatorSubmitDto,
+    @Req() request: IAuthenticatedRequest,
+  ) {
     // Implementation for submitting file labels, checklist answer from annotator in a single transaction
-    throw new NotImplementedException();
+    return await this.fileLabelService.AnnotatorSubmit(
+      annotatorSubmitDto,
+      request?.accountInfo,
+    );
   }
 }

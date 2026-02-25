@@ -5,6 +5,19 @@
   "compilerOptions": {
     "watchAssets": true,
     "deleteOutDir": true,
-    "assets": ["**/*.ejs", "**/*.css", "**/*.hbs"]
+    "assets": [
+      {
+        "include": "**/*.ejs",
+        "outDir": "dist/src"
+      },
+      {
+        "include": "**/*.css",
+        "outDir": "dist/src"
+      },
+      {
+        "include": "**/*.hbs",
+        "outDir": "dist/src"
+      }
+    ]
   }
 }

@@ -96,6 +96,11 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
   ): Promise<LabelEntity[]> {
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('label');
+
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('label.id IN (:...ids)', { ids });
     if (!includeDeleted) {
       qb.andWhere('label.deletedAt IS NULL');

@@ -5,4 +5,5 @@ export enum FileLabelStatusEnums {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   DONE = 'done',
+  REASSIGNED = 'reassigned',
 }
