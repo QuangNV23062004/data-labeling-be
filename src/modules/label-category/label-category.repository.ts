@@ -60,6 +60,10 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('label_category');
 
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('label_category.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {

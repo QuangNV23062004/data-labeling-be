@@ -51,6 +51,10 @@ export class ReviewErrorRepository extends BaseRepository<ReviewErrorEntity> {
   ): Promise<ReviewErrorEntity[]> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('reviewError');
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('reviewError.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {
@@ -294,5 +298,13 @@ export class ReviewErrorRepository extends BaseRepository<ReviewErrorEntity> {
     }
 
     return qb.getMany();
+  }
+
+  async CreateBulk(
+    reviewErrors: ReviewErrorEntity[],
+    em?: EntityManager,
+  ): Promise<ReviewErrorEntity[]> {
+    const repository = await this.GetRepository(em);
+    return repository.save(reviewErrors);
   }
 }

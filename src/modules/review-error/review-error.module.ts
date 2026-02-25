@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReviewErrorController } from './review-error.controller';
 import { ReviewErrorService } from './review-error.service';
@@ -11,7 +11,7 @@ import { ReviewErrorDomain } from './review-error.domain';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ReviewErrorEntity]),
-    ReviewModule,
+    forwardRef(() => ReviewModule),
     ReviewErrorTypeModule,
   ],
   controllers: [ReviewErrorController],

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ChecklistAnswerController } from './checklist-answer.controller';
 import { ChecklistAnswerService } from './checklist-answer.service';
 import { ChecklistAnswerRepository } from './checklist-answer.repository';
@@ -12,7 +12,7 @@ import { ChecklistAnswerDomain } from './checklist-answer.domain';
   imports: [
     TypeOrmModule.forFeature([ChecklistAnswerEntity]),
     LabelChecklistQuestionModule,
-    FileLabelModule,
+    forwardRef(() => FileLabelModule),
   ],
   controllers: [ChecklistAnswerController],
   providers: [
@@ -20,6 +20,10 @@ import { ChecklistAnswerDomain } from './checklist-answer.domain';
     ChecklistAnswerRepository,
     ChecklistAnswerDomain,
   ],
-  exports: [ChecklistAnswerService, ChecklistAnswerRepository],
+  exports: [
+    ChecklistAnswerService,
+    ChecklistAnswerRepository,
+    ChecklistAnswerDomain,
+  ],
 })
 export class ChecklistAnswerModule {}

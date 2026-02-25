@@ -9,8 +9,9 @@ import {
 import { Type } from 'class-transformer';
 import { FileLabelStatusEnums } from '../enums/file-label.enums';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 
-export class FilterFileLabelQueryDto {
+export class FilterFileLabelQueryDto extends BasePaginationQueryDto {
   @ApiPropertyOptional({
     description: 'Filter by file ID',
     example: '123e4567-e89b-12d3-a456-426614174000',

@@ -9,26 +9,28 @@ import {
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { join } from 'path/win32';
+import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(TypedConfigService);
   const logger = new Logger('Bootstrap');
+  const uploadsDir = join(__dirname, '..', 'uploads');
+  const templatesDir = join(__dirname, 'common', 'templates');
 
   // Configure static file serving for uploads
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  app.useStaticAssets(uploadsDir, {
     prefix: '/uploads/',
   });
 
   // Serve static assets (CSS, JS, images) from templates folder
-  app.useStaticAssets(join(__dirname, 'common', 'templates'), {
+  app.useStaticAssets(templatesDir, {
     prefix: '/templates/',
   });
 
   // Set base views directory for EJS templates
-  app.setBaseViewsDir(join(__dirname, 'common', 'templates'));
+  app.setBaseViewsDir(templatesDir);
 
   //API Prefix and Version
   const apiPrefix = configService.server.prefix.trim();

@@ -71,6 +71,9 @@ export class ReviewErrorTypeRepository extends BaseRepository<ReviewErrorTypeEnt
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('review_error_type');
 
+    if (ids.length === 0) {
+      return [];
+    }
     qb.where('review_error_type.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {

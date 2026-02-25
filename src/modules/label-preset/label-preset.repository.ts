@@ -191,6 +191,9 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     includeDeleted: boolean,
     entityManager?: EntityManager,
   ) {
+    if (ids.length === 0) {
+      return [];
+    }
     const repository = await this.GetRepository(entityManager);
     const qb = repository.createQueryBuilder('labelPreset');
     if (!includeDeleted) {
@@ -209,6 +212,7 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
       qb.leftJoinAndSelect('labelPreset.labels', 'label');
       qb.leftJoinAndSelect('label.categories', 'category');
     }
+
     return qb.andWhere('labelPreset.id IN (:...ids)', { ids }).getMany();
   }
 
