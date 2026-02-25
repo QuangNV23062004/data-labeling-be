@@ -2,16 +2,19 @@ import { AnswerDataDto } from 'src/modules/checklist-answer/dtos/answer-data/ans
 import { Decision } from '../enums/decisions.enums';
 import {
   ArrayMinSize,
+  IsArray,
   IsDefined,
+  IsEnum,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
-import { CreateReviewErrorDto } from 'src/modules/review-error/dtos/create-review-error.dto';
-import { IsArray, IsEnum, IsIn } from 'class-validator';
 import { SubmitReviewErrorDto } from './submit-review-error.dto';
 
 export class SubmitReviewsDto {
@@ -45,7 +48,7 @@ export class SubmitReviewsDto {
     type: () => [SubmitReviewErrorDto],
     description: 'List of errors identified during the review',
   })
-  @ValidateIf((o) => o.decision === 'rejected')
+  @ValidateIf((o) => o.decision === Decision.REJECTED)
   @IsDefined()
   @IsArray()
   @ArrayMinSize(1, {
@@ -62,5 +65,6 @@ export class SubmitReviewsDto {
   })
   @IsNotEmpty()
   @IsString()
+  @IsUUID()
   fileLabelId: string;
 }

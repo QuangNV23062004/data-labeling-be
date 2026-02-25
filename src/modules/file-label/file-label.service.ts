@@ -8,12 +8,10 @@ import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto
 import { CreateFileLabelDto } from './dtos/create-file-label.dto';
 import { UpdateFileLabelDto } from './dtos/update-file-label.dto';
 import {
-  CannotHardDeleteFileLabelWithChecklistAnswersException,
-  CannotRestoreFileLabelWithDeletedRelationsException,
   FileAccessNotAllowedException,
-  FileLabelLifeCycleHasCompletedException,
   FileLabelNotFoundException,
   FileLabelPairAlreadyExistsException,
+  InvalidFileLabelException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
 import { FileRepository } from '../file/file.repository';
@@ -349,11 +347,17 @@ export class FileLabelService extends BaseService {
           existingFileLabel,
         );
 
-        await this.repository.UpdateStatus(
+        const result = await this.repository.UpdateStatus(
           existingFileLabel.id,
           dto.status || existingFileLabel.status,
           transactionalEntityManager,
         );
+
+        if (!result) {
+          throw new InvalidFileLabelException(
+            `Failed to update file label status to ${dto.status}`,
+          );
+        }
       }
 
       const { round, role, type } =

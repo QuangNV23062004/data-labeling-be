@@ -26,7 +26,15 @@ import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.enti
   ['fileId', 'labelId', 'annotatorId', 'reviewerId'],
   {
     unique: true,
-    where: `"status" != '${FileLabelStatusEnums.REASSIGNED}' AND "deleted_at" IS NULL`,
+    where: `"status" != '${FileLabelStatusEnums.REASSIGNED}' AND "deleted_at" IS NULL AND "reviewer_id" IS NOT NULL`,
+  },
+)
+@Index(
+  'idx_unique_file_label_annotator_no_reviewer',
+  ['fileId', 'labelId', 'annotatorId'],
+  {
+    unique: true,
+    where: `"status" != '${FileLabelStatusEnums.REASSIGNED}' AND "deleted_at" IS NULL AND "reviewer_id" IS NULL`,
   },
 )
 export class FileLabelEntity extends BaseEntity {

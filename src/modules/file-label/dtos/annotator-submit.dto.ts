@@ -1,9 +1,9 @@
 import {
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { FileLabelStatusEnums } from '../enums/file-label.enums';
@@ -35,7 +35,7 @@ export class AnnotatorSubmitDto {
     example: FileLabelStatusEnums.PENDING_REVIEW,
     enum: FileLabelStatusEnums,
   })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   @IsEnum(FileLabelStatusEnums)
   status?: FileLabelStatusEnums = FileLabelStatusEnums.PENDING_REVIEW;
 

@@ -105,7 +105,7 @@ export class ReviewService extends BaseService {
 
   async Create(dto: CreateReviewDto, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity: ReviewEntity = new ReviewEntity();
 
       Object.assign(entity, dto);
@@ -190,7 +190,7 @@ export class ReviewService extends BaseService {
 
   async Update(id: string, dto: UpdateReviewDto, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         false,
@@ -273,7 +273,7 @@ export class ReviewService extends BaseService {
 
   async SoftDelete(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         false,
@@ -300,7 +300,7 @@ export class ReviewService extends BaseService {
 
   async Restore(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const entity = await this.reviewRepository.FindById(
         id,
         true,
@@ -321,7 +321,7 @@ export class ReviewService extends BaseService {
 
   async HardDelete(id: string, accountInfo?: AccountInfo) {
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       this.validateAdminForHardDelete(accountInfo);
 
       const entity = await this.reviewRepository.FindById(
@@ -347,7 +347,7 @@ export class ReviewService extends BaseService {
   async SubmitReview(dto: SubmitReviewsDto, accountInfo?: AccountInfo) {
     // console.log(JSON.stringify(dto, null, 2));
     const em = await this.reviewRepository.GetEntityManager();
-    return await em?.transaction(async (transactionalEntityManager) => {
+    return await em.transaction(async (transactionalEntityManager) => {
       const fileLabel = await this.fileLabelRepository.FindById(
         dto.fileLabelId,
         false,
@@ -444,27 +444,41 @@ export class ReviewService extends BaseService {
         transactionalEntityManager,
       );
 
+      const reviewErrorsInput = Array.isArray(dto.reviewErrors)
+        ? dto.reviewErrors
+        : [];
+
+      if (
+        reviewEntity.decision === Decision.REJECTED &&
+        reviewErrorsInput.length === 0
+      ) {
+        throw new InvalidReviewException(
+          'Rejected review must include at least 1 review error',
+        );
+      }
+
       if (
         reviewEntity.decision === Decision.APPROVED &&
-        dto.reviewErrors.length > 0
+        reviewErrorsInput.length > 0
       ) {
         throw new InvalidReviewException(
           'Cannot create review errors for an approved review',
         );
       }
 
-      const reviewErrorTypeIds = dto.reviewErrors.map(
+      const reviewErrorTypeIds = reviewErrorsInput.map(
         (error) => error.reviewErrorTypeId,
       );
 
+      const uniqueReviewErrorTypeIds = Array.from(new Set(reviewErrorTypeIds));
       const reviewErrorTypes = await this.reviewErrorTypeRepository.FindByIds(
-        reviewErrorTypeIds,
+        uniqueReviewErrorTypeIds,
         false,
         transactionalEntityManager,
       );
 
-      if (reviewErrorTypes.length !== reviewErrorTypeIds.length) {
-        const notFoundIds = reviewErrorTypeIds.filter(
+      if (reviewErrorTypes.length !== uniqueReviewErrorTypeIds.length) {
+        const notFoundIds = uniqueReviewErrorTypeIds.filter(
           (id) => !reviewErrorTypes.some((type) => type.id === id),
         );
         throw new InvalidReviewException(
@@ -472,7 +486,7 @@ export class ReviewService extends BaseService {
         );
       }
 
-      let reviewErrors = dto.reviewErrors.map((errorDto) => {
+      let reviewErrors = reviewErrorsInput.map((errorDto) => {
         const reviewError = new ReviewErrorEntity();
         reviewError.reviewId = reviewEntity.id;
         reviewError.reviewErrorTypeId = errorDto.reviewErrorTypeId;
@@ -490,11 +504,16 @@ export class ReviewService extends BaseService {
           : FileLabelStatusEnums.REJECTED;
 
       fileLabel!.status = newStatus;
-      await this.fileLabelRepository.UpdateStatus(
+      const result = await this.fileLabelRepository.UpdateStatus(
         fileLabel!.id,
         newStatus,
         transactionalEntityManager,
       );
+      if (!result) {
+        throw new InvalidReviewException(
+          `Failed to update file label status to ${newStatus}`,
+        );
+      }
 
       reviewEntity.checklistAnswer = checklistAnswerEntity;
       reviewEntity.reviewErrors = reviewErrors;

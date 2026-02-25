@@ -29,7 +29,7 @@ export class CreateReviewErrorDto {
 
   @ApiPropertyOptional({
     description:
-      'JSON object containing the location/coordinates where the error was found(any is fine)',
+      'JSON object specifying the location or coordinates where the error was detected.',
     example: { x: 100, y: 200, width: 50, height: 30 },
   })
   @IsOptional()
