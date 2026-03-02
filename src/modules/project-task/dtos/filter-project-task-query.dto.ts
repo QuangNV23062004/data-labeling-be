@@ -1,20 +1,50 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsUUID, IsEnum, IsIn } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
+import { ProjectTaskStatus } from '../enums/task-status.enums';
 
-export class FilterProjectTaskQueryDto {
+export class FilterProjectTaskQueryDto extends BasePaginationQueryDto {
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'uuid',
+    description: 'Filter by project ID',
+  })
   @IsOptional()
-  @IsString()
-  search?: string;
+  @IsUUID()
+  projectId?: string;
 
+  @ApiPropertyOptional({
+    enum: ProjectTaskStatus,
+    description: 'Filter by task status',
+  })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  page?: number = 1;
+  @IsEnum(ProjectTaskStatus)
+  status?: ProjectTaskStatus;
 
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'uuid',
+    description: 'Filter by assigned by user ID (manager)',
+  })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  @IsUUID()
+  assignedByUserId?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'uuid',
+    description: 'Filter by assigned to user ID (annotator)',
+  })
+  @IsOptional()
+  @IsUUID()
+  assignedToUserId?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    enum: ['createdAt', 'updatedAt', 'startedAt', 'completedAt'],
+    description: 'Field to order results by',
+  })
+  @IsOptional()
+  @IsIn(['createdAt', 'updatedAt', 'startedAt', 'completedAt'])
+  orderBy?: string;
 }

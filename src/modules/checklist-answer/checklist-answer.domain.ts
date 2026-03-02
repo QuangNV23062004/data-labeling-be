@@ -147,7 +147,7 @@ export class ChecklistAnswerDomain {
       if (!allQuestionIds.has(currentQuestionId)) {
         throw new InvalidQuestionIdInQuestionDataForThisLabelAndRole(
           accountInfo?.role as Role,
-          fileLabel.labelId,
+          fileLabel.labelId ?? 'N/A',
           currentQuestionId,
         );
       }

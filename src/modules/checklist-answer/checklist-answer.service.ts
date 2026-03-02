@@ -99,7 +99,7 @@ export class ChecklistAnswerService extends BaseService {
       //get all questions for this label target this role
       const questions = await this.labelChecklistQuestionRepository.FindAll(
         {
-          labelId: fileLabel.labelId,
+          labelId: fileLabel.labelId ?? undefined,
           role: accountInfo?.role as Role,
         },
         false,
@@ -188,7 +188,7 @@ export class ChecklistAnswerService extends BaseService {
 
         const questions = await this.labelChecklistQuestionRepository.FindAll(
           {
-            labelId: entity.fileLabel.labelId,
+            labelId: entity.fileLabel.labelId ?? undefined,
             role: entity.roleType as Role,
           },
           false,
