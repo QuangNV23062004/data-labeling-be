@@ -195,6 +195,10 @@ export class LabelChecklistQuestionRepository extends BaseRepository<LabelCheckl
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('label_checklist_question');
 
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('label_checklist_question.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {

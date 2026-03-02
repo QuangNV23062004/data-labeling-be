@@ -5,6 +5,7 @@ import { EntityManager, IsNull, Repository } from 'typeorm';
 import { FileLabelEntity } from './file-label.entity';
 import { FilterFileLabelQueryDto } from './dtos/filter-file-label-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { FileLabelStatusEnums } from './enums/file-label.enums';
 
 @Injectable()
 export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
@@ -45,6 +46,10 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
+    } else {
+      qb.andWhere('fileLabel.status != :status', {
+        status: FileLabelStatusEnums.REASSIGNED,
+      });
     }
 
     if (query?.search && query?.searchBy) {
@@ -124,6 +129,10 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
+    } else {
+      qb.andWhere('fileLabel.status != :status', {
+        status: FileLabelStatusEnums.REASSIGNED,
+      });
     }
 
     if (query?.search && query?.searchBy) {
@@ -243,6 +252,10 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
 
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('fileLabel.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {
@@ -355,5 +368,66 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     return await repository.findOne({
       where: whereCondition,
     });
+  }
+
+  async FindLabelByFileAndLabelAndAnnotatorId(
+    fileId: string,
+    labelId: string,
+    annotatorId: string,
+    includeDeleted: boolean,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity | null> {
+    const repository = await this.GetRepository(em);
+    const qb = repository.createQueryBuilder('fileLabel');
+
+    qb.where('fileLabel.fileId = :fileId', { fileId });
+    qb.andWhere('fileLabel.labelId = :labelId', { labelId });
+    qb.andWhere('fileLabel.annotatorId = :annotatorId', { annotatorId });
+    if (!includeDeleted) {
+      qb.andWhere('fileLabel.deletedAt IS NULL');
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'fileLabel.annotator',
+        'annotator',
+        'annotator.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'fileLabel.reviewer',
+        'reviewer',
+        'reviewer.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'fileLabel.checklistAnswers',
+        'checklistAnswers',
+        'checklistAnswers.deletedAt IS NULL',
+      );
+    } else {
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
+      qb.leftJoinAndSelect('fileLabel.annotator', 'annotator');
+      qb.leftJoinAndSelect('fileLabel.reviewer', 'reviewer');
+      qb.leftJoinAndSelect('fileLabel.checklistAnswers', 'checklistAnswers');
+    }
+
+    return await qb.getOne();
+  }
+
+  //for some reason, failed to use update, so yeah
+  async UpdateStatus(
+    id: string,
+    status: FileLabelStatusEnums,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity | null> {
+    const repository = await this.GetRepository(em);
+    const fileLabel = await repository.update({ id }, { status });
+    if (fileLabel.affected && fileLabel.affected > 0) {
+      return await repository.findOne({ where: { id } });
+    }
+    return null;
   }
 }

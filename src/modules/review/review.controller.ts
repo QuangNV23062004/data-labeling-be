@@ -26,6 +26,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { SubmitReviewsDto } from './dtos/submit-reviews.dto';
 
 @ApiTags('Reviews')
 @ApiBearerAuth()
@@ -221,8 +222,13 @@ export class ReviewController {
   @Post('reviewer/submit')
   @Roles(Role.REVIEWER)
   @ApiOperation({ summary: 'Submit reviews by the reviewer' })
-  async SubmitReviews(@Req() request: IAuthenticatedRequest) {
-    // Implementation for submitting reviews, decision from reviewer, review errors, checklist answer in a single transaction
-    throw new NotImplementedException();
+  async SubmitReviews(
+    @Req() request: IAuthenticatedRequest,
+    @Body() submitReviewsDto: SubmitReviewsDto,
+  ) {
+    return this.reviewService.SubmitReview(
+      submitReviewsDto,
+      request?.accountInfo,
+    );
   }
 }

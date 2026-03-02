@@ -234,6 +234,10 @@ export class FileRepository extends BaseRepository<FileEntity> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('file');
 
+    if (ids.length === 0) {
+      return [];
+    }
+
     qb.where('file.id IN (:...ids)', { ids });
 
     if (!includeDeleted) {

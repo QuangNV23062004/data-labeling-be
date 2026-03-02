@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileLabelController } from './file-label.controller';
 import { FileLabelService } from './file-label.service';
@@ -6,15 +6,20 @@ import { FileLabelRepository } from './file-label.repository';
 import { FileLabelEntity } from './file-label.entity';
 import { FileModule } from '../file/file.module';
 import { LabelModule } from '../label/label.module';
+import { FileLabelDomain } from './file-label.domain';
+import { ChecklistAnswerModule } from '../checklist-answer/checklist-answer.module';
+import { LabelChecklistQuestionModule } from '../label-checklist-question/label-checklist-question.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([FileLabelEntity]),
     FileModule,
     LabelModule,
+    LabelChecklistQuestionModule,
+    forwardRef(() => ChecklistAnswerModule),
   ],
   controllers: [FileLabelController],
-  providers: [FileLabelService, FileLabelRepository],
-  exports: [FileLabelService, FileLabelRepository],
+  providers: [FileLabelService, FileLabelRepository, FileLabelDomain],
+  exports: [FileLabelService, FileLabelRepository, FileLabelDomain],
 })
 export class FileLabelModule {}
