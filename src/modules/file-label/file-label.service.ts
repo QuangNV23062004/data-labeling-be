@@ -106,63 +106,76 @@ export class FileLabelService extends BaseService {
 
       data.fileId = file.id;
 
-      if (!data?.labelId) {
-        throw new MissingRequiredFileLabelFieldException('labelId');
-      }
+      // Make labelId optional - only validate if provided
+      if (data?.labelId) {
+        const label = await this.labelRepository.FindById(
+          data.labelId,
+          false,
+          transactionalEntityManager,
+        );
 
-      const label = await this.labelRepository.FindById(
-        data.labelId,
-        false,
-        transactionalEntityManager,
-      );
+        if (!label) {
+          throw new LabelNotFoundException();
+        }
 
-      if (!label) {
-        throw new LabelNotFoundException();
-      }
+        data.labelId = label.id;
 
-      data.labelId = label.id;
-
-      if (
-        file.annotatorId !== accountInfo?.sub &&
-        file.reviewerId !== accountInfo?.sub &&
-        accountInfo?.role !== Role.ADMIN
-      ) {
-        throw new FileAccessNotAllowedException(file.id);
-      }
-
-      // Check if file already has this label assigned
-      const existingFileLabel = await this.repository.FindByFileAndLabel(
-        data.fileId,
-        data.labelId,
-        false,
-        transactionalEntityManager,
-      );
-
-      if (existingFileLabel) {
-        throw new FileLabelPairAlreadyExistsException(
+        // Check if file already has this label assigned
+        const existingFileLabel = await this.repository.FindByFileAndLabel(
           data.fileId,
           data.labelId,
+          false,
+          transactionalEntityManager,
         );
-      }
 
-      if (accountInfo?.role === Role.ANNOTATOR) {
-        entity.annotatorId = accountInfo?.sub as string;
-      }
-
-      if (accountInfo?.role === Role.REVIEWER) {
-        entity.reviewerId = accountInfo?.sub as string;
-      }
-
-      //allow admin to assign annotator and reviewer manually
-      if (accountInfo?.role === Role.ADMIN) {
-        if (!data.annotatorId) {
-          throw new MissingRequiredFileLabelFieldException('annotatorId');
+        if (existingFileLabel) {
+          throw new FileLabelPairAlreadyExistsException(
+            data.fileId,
+            data.labelId,
+          );
         }
-        entity.annotatorId = data.annotatorId;
+      } else {
+        entity.labelId = null;
+      }
+
+      // Only perform access control checks if accountInfo is provided
+      if (accountInfo) {
+        if (
+          file.annotatorId !== accountInfo?.sub &&
+          file.reviewerId !== accountInfo?.sub &&
+          accountInfo?.role !== Role.ADMIN
+        ) {
+          throw new FileAccessNotAllowedException(file.id);
+        }
+
+        if (accountInfo?.role === Role.ANNOTATOR) {
+          entity.annotatorId = accountInfo?.sub as string;
+        }
+
+        if (accountInfo?.role === Role.REVIEWER) {
+          entity.reviewerId = accountInfo?.sub as string;
+        }
+
+        //allow admin to assign annotator and reviewer manually
+        if (accountInfo?.role === Role.ADMIN) {
+          if (!data.annotatorId) {
+            throw new MissingRequiredFileLabelFieldException('annotatorId');
+          }
+          entity.annotatorId = data.annotatorId;
+          if (data.reviewerId) {
+            entity.reviewerId = data.reviewerId;
+          }
+        }
+      } else {
+        // When called from other services without accountInfo, use provided annotatorId
+        if (data.annotatorId) {
+          entity.annotatorId = data.annotatorId;
+        }
         if (data.reviewerId) {
           entity.reviewerId = data.reviewerId;
         }
       }
+      
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -199,14 +212,18 @@ export class FileLabelService extends BaseService {
       ) {
         const checkLabel = data?.labelId ? data.labelId : entity.labelId;
         const checkFile = data?.fileId ? data.fileId : entity.fileId;
-        const existingFileLabel = await this.repository.FindByFileAndLabel(
-          checkFile,
-          checkLabel,
-          false,
-          transactionalEntityManager,
-        );
-        if (existingFileLabel && existingFileLabel.id !== entity.id) {
-          throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
+        
+        // Only check for duplicates if labelId is provided (not null)
+        if (checkLabel) {
+          const existingFileLabel = await this.repository.FindByFileAndLabel(
+            checkFile,
+            checkLabel,
+            false,
+            transactionalEntityManager,
+          );
+          if (existingFileLabel && existingFileLabel.id !== entity.id) {
+            throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
+          }
         }
       }
 

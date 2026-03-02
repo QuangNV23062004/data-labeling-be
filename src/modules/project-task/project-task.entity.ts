@@ -12,6 +12,7 @@ import { FileEntity } from '../file/file.entity';
 import { AccountEntity } from '../account/account.entity';
 import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
 import { ProjectTaskStatus } from './enums/task-status.enums';
+import { Role } from '../account/enums/role.enum';
 
 @Entity({ name: 'project_tasks' })
 @Index('idx_projecttask_project_id', ['projectId'])
@@ -55,4 +56,15 @@ export class ProjectTaskEntity extends BaseEntity {
 
   @Column({ name: 'priority', type: 'enum', enum: ProjectTaskPriorityEnums })
   priority: ProjectTaskPriorityEnums;
+
+  @Column({ name: 'file_ids', type: 'uuid', array: true })
+  fileIds: string[];
+
+  @Column({
+    name: 'assigned_user_role',
+    type: 'enum',
+    enum: [Role.ANNOTATOR, Role.REVIEWER],
+    nullable: true,
+  })
+  assignedUserRole: Role | null;
 }
