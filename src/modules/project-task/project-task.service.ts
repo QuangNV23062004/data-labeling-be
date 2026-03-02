@@ -12,6 +12,7 @@ import {
   UserNotFoundException,
   MultipleFilesNotFoundException,
   ProjectTaskNotFoundException,
+  InvalidProjectTaskException,
 } from './exceptions/project-task-exceptions.exception';
 import { ProjectTaskStatus } from './enums/task-status.enums';
 import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
@@ -219,6 +220,11 @@ export class ProjectTaskService {
         projectTask.fileIds = projectTask.fileIds.filter(
           (fileId) => !fileIdsToRemoveSet.has(fileId),
         );
+      }
+
+      // Check that the final file IDs list is not empty
+      if (projectTask.fileIds.length === 0) {
+        throw new InvalidProjectTaskException('A task must have at least one file assigned');
       }
 
       if (dto.status) {

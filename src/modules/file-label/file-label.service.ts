@@ -9,18 +9,14 @@ import { CreateFileLabelDto } from './dtos/create-file-label.dto';
 import { UpdateFileLabelDto } from './dtos/update-file-label.dto';
 import {
   FileAccessNotAllowedException,
-  FileLabelNotFoundException,
   FileLabelPairAlreadyExistsException,
   InvalidFileLabelException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
 import { FileRepository } from '../file/file.repository';
 import { LabelRepository } from '../label/label.repository';
-import { FileNotFoundException } from '../file/exceptions/file-exceptions.exception';
-import { LabelNotFoundException } from '../label/exceptions/label-exceptions.exceptions';
 import { Role } from '../account/enums/role.enum';
 import { AnnotatorSubmitDto } from './dtos/annotator-submit.dto';
-import { FileLabelStatusEnums } from './enums/file-label.enums';
 import { FileLabelDomain } from './file-label.domain';
 import { ChecklistAnswerRepository } from '../checklist-answer/checklist-answer.repository';
 import { ChecklistAnswerDomain } from '../checklist-answer/checklist-answer.domain';
@@ -202,9 +198,10 @@ export class FileLabelService extends BaseService {
       if (
         (data?.fileId && data.fileId !== entity!.fileId) ||
         (data?.labelId && data.labelId !== entity!.labelId)
-      ) {
+      ){
         const checkLabel = data?.labelId ? data.labelId : entity!.labelId;
         const checkFile = data?.fileId ? data.fileId : entity!.fileId;
+        if (checkLabel && checkFile) {
         const existingFileLabel = await this.repository.FindByFileAndLabel(
           checkFile,
           checkLabel,
@@ -214,7 +211,7 @@ export class FileLabelService extends BaseService {
         if (existingFileLabel && existingFileLabel.id !== entity!.id) {
           throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
         }
-      }
+      }}
 
       Object.assign(entity!, data);
       if (data?.fileId) {
@@ -390,7 +387,7 @@ export class FileLabelService extends BaseService {
 
       const questions = await this.labelChecklistQuestionRepository.FindAll(
         {
-          labelId: existingFileLabel.labelId,
+          labelId: existingFileLabel.labelId ?? undefined,
           role: Role.ANNOTATOR,
         },
         false,
