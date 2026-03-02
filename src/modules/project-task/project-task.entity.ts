@@ -57,7 +57,12 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'priority', type: 'enum', enum: ProjectTaskPriorityEnums })
   priority: ProjectTaskPriorityEnums;
 
-  @Column({ name: 'file_ids', type: 'uuid', array: true })
+  @Column({
+    name: 'file_ids',
+    type: 'uuid',
+    array: true,
+    default: () => "ARRAY[]::uuid[]",
+  })
   fileIds: string[];
 
   @Column({

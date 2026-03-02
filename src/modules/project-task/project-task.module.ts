@@ -7,7 +7,6 @@ import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectModule } from '../project/project.module';
 import { AccountModule } from '../account/account.module';
 import { FileModule } from '../file/file.module';
-import { FileLabelModule } from '../file-label/file-label.module';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { FileLabelModule } from '../file-label/file-label.module';
     ProjectModule,
     AccountModule,
     FileModule,
-    FileLabelModule,
   ],
   controllers: [ProjectTaskController],
   providers: [ProjectTaskService, ProjectTaskRepository],

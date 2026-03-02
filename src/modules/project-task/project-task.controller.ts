@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Delete, Patch, Body, HttpCode, HttpStatus, Query, Req, UnauthorizedException, Param, Res } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Patch, Body, HttpCode, HttpStatus, Query, Req, UnauthorizedException, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProjectTaskService } from './project-task.service';
 import { CreateProjectTaskDto } from './dtos/create-project-task.dto';
@@ -42,7 +42,7 @@ export class ProjectTaskController {
   })
   @ApiResponse({ 
     status: HttpStatus.FORBIDDEN, 
-    description: 'Only admins and managers can create project tasks.',
+    description: 'Only managers can create project tasks.',
   })
   async create(
     @Body() createProjectTaskDto: CreateProjectTaskDto,
@@ -118,12 +118,12 @@ export class ProjectTaskController {
   }
 
   @Get(':id')
-  @Roles(Role.MANAGER, Role.ANNOTATOR)
+  @Roles(Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 
     summary: 'Get a project task by ID',
-    description: 'Retrieves a specific project task by its ID. Available for managers and annotators.'
+    description: 'Retrieves a specific project task by its ID. Available for managers, annotators, and reviewers.'
   })
   @ApiResponse({ 
     status: HttpStatus.OK, 
@@ -136,7 +136,7 @@ export class ProjectTaskController {
   })
   @ApiResponse({ 
     status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - Manager or Annotator role required.',
+    description: 'Unauthorized - Manager, Annotator, or Reviewer role required.',
   })
   async getById(
     @Param('id') id: string,

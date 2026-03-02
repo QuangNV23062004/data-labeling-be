@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID, IsArray, ArrayMinSize } from 'class-validator';
+import { IsOptional, IsUUID, IsArray, ArrayMinSize, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectTaskStatus } from '../enums/task-status.enums';
 
@@ -35,5 +35,6 @@ export class PatchProjectTaskDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsEnum(ProjectTaskStatus, { message: `Status must be one of the following: ${Object.values(ProjectTaskStatus).join(', ')}` })
   status?: ProjectTaskStatus;
 }
