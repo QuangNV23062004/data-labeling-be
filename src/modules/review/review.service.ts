@@ -406,7 +406,7 @@ export class ReviewService extends BaseService {
       //get all questions for this label target this role
       const questions = await this.labelChecklistQuestionRepository.FindAll(
         {
-          labelId: fileLabel!.labelId,
+          labelId: fileLabel!.labelId ?? undefined,
           role: accountInfo?.role as Role,
         },
         false,

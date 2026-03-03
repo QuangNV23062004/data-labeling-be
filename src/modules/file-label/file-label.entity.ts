@@ -45,8 +45,8 @@ export class FileLabelEntity extends BaseEntity {
   @JoinColumn({ name: 'file_id' })
   file: FileEntity;
 
-  @Column({ name: 'label_id', type: 'uuid', nullable: false })
-  labelId: string;
+  @Column({ name: 'label_id', type: 'uuid', nullable: true })
+  labelId: string | null;
 
   @ManyToOne(() => LabelEntity, (label) => label.id)
   @JoinColumn({ name: 'label_id' })

@@ -18,14 +18,14 @@ export class CreateFileLabelDto {
   @IsUUID()
   fileId: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The ID of the label to apply',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @IsUUID()
-  labelId: string;
+  labelId?: string | null;
 
   @ApiProperty({
     description: 'The ID of the annotator',

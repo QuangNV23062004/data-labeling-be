@@ -9,18 +9,14 @@ import { CreateFileLabelDto } from './dtos/create-file-label.dto';
 import { UpdateFileLabelDto } from './dtos/update-file-label.dto';
 import {
   FileAccessNotAllowedException,
-  FileLabelNotFoundException,
   FileLabelPairAlreadyExistsException,
   InvalidFileLabelException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
 import { FileRepository } from '../file/file.repository';
 import { LabelRepository } from '../label/label.repository';
-import { FileNotFoundException } from '../file/exceptions/file-exceptions.exception';
-import { LabelNotFoundException } from '../label/exceptions/label-exceptions.exceptions';
 import { Role } from '../account/enums/role.enum';
 import { AnnotatorSubmitDto } from './dtos/annotator-submit.dto';
-import { FileLabelStatusEnums } from './enums/file-label.enums';
 import { FileLabelDomain } from './file-label.domain';
 import { ChecklistAnswerRepository } from '../checklist-answer/checklist-answer.repository';
 import { ChecklistAnswerDomain } from '../checklist-answer/checklist-answer.domain';
@@ -115,15 +111,13 @@ export class FileLabelService extends BaseService {
 
       data.fileId = file!.id;
 
-      if (!data?.labelId) {
-        throw new MissingRequiredFileLabelFieldException('labelId');
-      }
-
-      const label = await this.labelRepository.FindById(
-        data.labelId,
-        false,
-        transactionalEntityManager,
-      );
+      // Make labelId optional - only validate if provided
+      if (data?.labelId) {
+        const label = await this.labelRepository.FindById(
+          data.labelId,
+          false,
+          transactionalEntityManager,
+        );
 
       this.fileLabelDomain.validateLabelExist(label);
 
@@ -131,13 +125,13 @@ export class FileLabelService extends BaseService {
 
       this.fileLabelDomain.validateFileAccess(file!, accountInfo);
 
-      // Check if file already has this label assigned
-      const existingFileLabel = await this.repository.FindByFileAndLabel(
-        data.fileId,
-        data.labelId,
-        false,
-        transactionalEntityManager,
-      );
+        // Check if file already has this label assigned
+        const existingFileLabel = await this.repository.FindByFileAndLabel(
+          data.fileId,
+          data.labelId,
+          false,
+          transactionalEntityManager,
+        );
 
       this.fileLabelDomain.validateExistingFileLabel(
         existingFileLabel,
@@ -145,24 +139,34 @@ export class FileLabelService extends BaseService {
         data.labelId,
       );
 
-      if (accountInfo?.role === Role.ANNOTATOR) {
-        entity.annotatorId = accountInfo?.sub as string;
-      }
-
-      if (accountInfo?.role === Role.REVIEWER) {
-        entity.reviewerId = accountInfo?.sub as string;
-      }
-
-      //allow admin to assign annotator and reviewer manually
-      if (accountInfo?.role === Role.ADMIN) {
-        if (!data.annotatorId) {
-          throw new MissingRequiredFileLabelFieldException('annotatorId');
+        if (accountInfo?.role === Role.ANNOTATOR) {
+          entity.annotatorId = accountInfo?.sub as string;
         }
-        entity.annotatorId = data.annotatorId;
+
+        if (accountInfo?.role === Role.REVIEWER) {
+          entity.reviewerId = accountInfo?.sub as string;
+        }
+
+        //allow admin to assign annotator and reviewer manually
+        if (accountInfo?.role === Role.ADMIN) {
+          if (!data.annotatorId) {
+            throw new MissingRequiredFileLabelFieldException('annotatorId');
+          }
+          entity.annotatorId = data.annotatorId;
+          if (data.reviewerId) {
+            entity.reviewerId = data.reviewerId;
+          }
+        }
+      } else {
+        // When called from other services without accountInfo, use provided annotatorId
+        if (data.annotatorId) {
+          entity.annotatorId = data.annotatorId;
+        }
         if (data.reviewerId) {
           entity.reviewerId = data.reviewerId;
         }
       }
+      
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -194,9 +198,10 @@ export class FileLabelService extends BaseService {
       if (
         (data?.fileId && data.fileId !== entity!.fileId) ||
         (data?.labelId && data.labelId !== entity!.labelId)
-      ) {
+      ){
         const checkLabel = data?.labelId ? data.labelId : entity!.labelId;
         const checkFile = data?.fileId ? data.fileId : entity!.fileId;
+        if (checkLabel && checkFile) {
         const existingFileLabel = await this.repository.FindByFileAndLabel(
           checkFile,
           checkLabel,
@@ -206,7 +211,7 @@ export class FileLabelService extends BaseService {
         if (existingFileLabel && existingFileLabel.id !== entity!.id) {
           throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
         }
-      }
+      }}
 
       Object.assign(entity!, data);
       if (data?.fileId) {
@@ -384,7 +389,7 @@ export class FileLabelService extends BaseService {
 
       const questions = await this.labelChecklistQuestionRepository.FindAll(
         {
-          labelId: existingFileLabel.labelId,
+          labelId: existingFileLabel.labelId ?? undefined,
           role: Role.ANNOTATOR,
         },
         false,

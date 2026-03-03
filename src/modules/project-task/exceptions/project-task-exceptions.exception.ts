@@ -17,3 +17,15 @@ export class InvalidProjectTaskException extends BadRequestException {
     super(`Invalid project-task: ${message}`);
   }
 }
+
+export class UserNotFoundException extends NotFoundException {
+  constructor(userId: string, userType: string) {
+    super(`${userType} with ID "${userId}" not found`);
+  }
+}
+
+export class MultipleFilesNotFoundException extends BadRequestException {
+  constructor(fileIds: string[]) {
+    super(`The following file IDs were not found: ${fileIds.join(', ')}`);
+  }
+}
