@@ -347,6 +347,8 @@ export class FileLabelService extends BaseService {
           existingFileLabel,
         );
 
+        this.fileLabelDomain.validateFileLabelNotReassigned(existingFileLabel);
+
         const result = await this.repository.UpdateStatus(
           existingFileLabel.id,
           dto.status || existingFileLabel.status,

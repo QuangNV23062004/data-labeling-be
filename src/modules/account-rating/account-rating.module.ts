@@ -4,9 +4,19 @@ import { AccountRatingService } from './account-rating.service';
 import { AccountRatingRepository } from './account-rating.repository';
 import { AccountRatingEntity } from './account-rating.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccountModule } from '../account/account.module';
+import { ProjectModule } from '../project/project.module';
+import { ReviewErrorModule } from '../review-error/review-error.module';
+import { FileLabelModule } from '../file-label/file-label.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AccountRatingEntity])],
+  imports: [
+    TypeOrmModule.forFeature([AccountRatingEntity]),
+    AccountModule,
+    ProjectModule,
+    ReviewErrorModule,
+    FileLabelModule,
+  ],
   controllers: [AccountRatingController],
   providers: [AccountRatingService, AccountRatingRepository],
 })

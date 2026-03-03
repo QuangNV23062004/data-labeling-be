@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Repository } from 'typeorm';
 import { FileLabelEntity } from './file-label.entity';
 import { FilterFileLabelQueryDto } from './dtos/filter-file-label-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
@@ -429,5 +429,36 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
       return await repository.findOne({ where: { id } });
     }
     return null;
+  }
+
+  async BatchUpdateStatus(
+    ids: string[],
+    status: FileLabelStatusEnums,
+    em?: EntityManager,
+  ): Promise<boolean> {
+    const repository = await this.GetRepository(em);
+    const result = await repository.update({ id: In(ids) }, { status });
+    return result?.affected !== undefined && (result?.affected as number) > 0;
+  }
+
+  //use for account rating calculation, get all file labels for a specific annotator in a project
+  async FindByProjectIdAndAnnotatorId(
+    projectId: string,
+    annotatorId: string,
+    includeDeleted: boolean,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity[]> {
+    const repository = await this.GetRepository(em);
+    const qb = repository.createQueryBuilder('fileLabel');
+
+    if (!includeDeleted) {
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+    } else {
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+    }
+    qb.where('file.projectId = :projectId', { projectId });
+    qb.where('fileLabel.annotatorId = :annotatorId', { annotatorId });
+
+    return await qb.getMany();
   }
 }
