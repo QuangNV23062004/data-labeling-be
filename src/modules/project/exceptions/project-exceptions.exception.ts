@@ -27,3 +27,11 @@ export class UnsupportedProjectDataTypeException extends BadRequestException {
     super(`Unsupported project data type: ${type}, only image is supported`);
   }
 }
+
+export class ProjectCannotCompleteException extends BadRequestException {
+  constructor(projectId: string, reason: string) {
+    super(
+      `Project with ID "${projectId}" cannot be completed because ${reason}`,
+    );
+  }
+}

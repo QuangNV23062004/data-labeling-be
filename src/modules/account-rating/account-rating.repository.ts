@@ -3,9 +3,10 @@ import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AccountRatingEntity } from './account-rating.entity';
-import { EntityManager } from 'typeorm/entity-manager/EntityManager';
+import { EntityManager } from 'typeorm';
 import { FilterAccountRatingQueryDto } from './dtos/filter-account-rating-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+
 @Injectable()
 export class AccountRatingRepository extends BaseRepository<AccountRatingEntity> {
   constructor(
@@ -253,5 +254,25 @@ export class AccountRatingRepository extends BaseRepository<AccountRatingEntity>
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
+  }
+
+  async FindByProjectId(
+    projectId: string,
+    includeDeleted = false,
+    transactionalEntityManager?: EntityManager,
+  ): Promise<AccountRatingEntity[]> {
+    const repo = await this.GetRepository(transactionalEntityManager);
+    const where: any = { projectId };
+    if (!includeDeleted) where.deletedAt = null;
+    return repo.find({ where });
+  }
+
+  async CreateBatch(
+    entities: AccountRatingEntity[],
+    transactionalEntityManager?: EntityManager,
+  ): Promise<AccountRatingEntity[]> {
+    if (!entities.length) return [];
+    const repo = await this.GetRepository(transactionalEntityManager);
+    return repo.save(entities);
   }
 }

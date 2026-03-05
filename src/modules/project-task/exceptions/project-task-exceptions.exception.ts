@@ -1,4 +1,9 @@
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 export class ProjectTaskNotFoundException extends NotFoundException {
   constructor(id: string) {
@@ -27,5 +32,11 @@ export class UserNotFoundException extends NotFoundException {
 export class MultipleFilesNotFoundException extends BadRequestException {
   constructor(fileIds: string[]) {
     super(`The following file IDs were not found: ${fileIds.join(', ')}`);
+  }
+}
+
+export class FailedToAssignUserToFile extends InternalServerErrorException {
+  constructor(userId: string, fileIds: string[]) {
+    super(`Failed to assign user ${userId} to list of files in ${fileIds}`);
   }
 }

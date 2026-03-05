@@ -3,9 +3,10 @@ import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AccountRatingHistoryEntity } from './account-rating-history.entity';
-import { EntityManager } from 'typeorm/entity-manager/EntityManager';
+import { EntityManager } from 'typeorm';
 import { FilterAccountRatingHistoryQueryDto } from './dtos/filter-account-rating-history-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+
 @Injectable()
 export class AccountRatingHistoryRepository extends BaseRepository<AccountRatingHistoryEntity> {
   constructor(
@@ -21,6 +22,15 @@ export class AccountRatingHistoryRepository extends BaseRepository<AccountRating
   ): Promise<AccountRatingHistoryEntity> {
     const repository = await this.GetRepository(entityManager);
     return repository.save(accountRatingHistory);
+  }
+
+  async CreateBatch(
+    entities: AccountRatingHistoryEntity[],
+    transactionalEntityManager?: EntityManager,
+  ): Promise<AccountRatingHistoryEntity[]> {
+    if (!entities.length) return [];
+    const repo = await this.GetRepository(transactionalEntityManager);
+    return repo.save(entities);
   }
 
   async FindById(

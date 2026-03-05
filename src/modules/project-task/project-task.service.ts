@@ -13,6 +13,7 @@ import {
   MultipleFilesNotFoundException,
   ProjectTaskNotFoundException,
   InvalidProjectTaskException,
+  FailedToAssignUserToFile,
 } from './exceptions/project-task-exceptions.exception';
 import { ProjectTaskStatus } from './enums/task-status.enums';
 import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
@@ -28,9 +29,12 @@ export class ProjectTaskService {
     private readonly fileRepository: FileRepository,
   ) {}
 
-  async create(dto: CreateProjectTaskDto, managerUserId: string): Promise<ProjectTaskEntity> {
+  async create(
+    dto: CreateProjectTaskDto,
+    managerUserId: string,
+  ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
-    
+
     return em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project exists
       const project = await this.projectRepository.FindById(
@@ -73,7 +77,7 @@ export class ProjectTaskService {
         false,
         transactionalEntityManager,
       );
-      
+
       if (files.length !== dto.fileIds.length) {
         const foundFileIds = files.map((file) => file.id);
         const missingFileIds = dto.fileIds.filter(
@@ -95,7 +99,10 @@ export class ProjectTaskService {
       projectTask.completedAt = null;
 
       // Set assignedUserRole based on the user's role
-      if (assignedUser.role === Role.ANNOTATOR || assignedUser.role === Role.REVIEWER) {
+      if (
+        assignedUser.role === Role.ANNOTATOR ||
+        assignedUser.role === Role.REVIEWER
+      ) {
         projectTask.assignedUserRole = assignedUser.role;
       } else {
         projectTask.assignedUserRole = null;
@@ -105,6 +112,23 @@ export class ProjectTaskService {
         projectTask,
         transactionalEntityManager,
       );
+
+      // Update files
+      const data =
+        assignedUser?.role === Role.ANNOTATOR
+          ? { annotatorId: assignedUser.id as string }
+          : assignedUser?.role === Role.REVIEWER
+            ? { reviewerId: assignedUser.id as string }
+            : {};
+
+      const result = await this.fileRepository.BatchUpdate(
+        dto.fileIds,
+        data,
+        transactionalEntityManager,
+      );
+
+      if (!result)
+        throw new FailedToAssignUserToFile(dto.assignedUserId, dto.fileIds);
 
       return savedProjectTask;
     });
@@ -135,17 +159,20 @@ export class ProjectTaskService {
       id,
       includeDeleted,
     );
-    
+
     if (!projectTask) {
       throw new ProjectTaskNotFoundException(id);
     }
-    
+
     return projectTask;
   }
 
-  async Patch(id: string, dto: PatchProjectTaskDto): Promise<ProjectTaskEntity> {
+  async Patch(
+    id: string,
+    dto: PatchProjectTaskDto,
+  ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
-    
+
     return em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project task exists
       const projectTask = await this.projectTaskRepository.FindById(
@@ -170,7 +197,10 @@ export class ProjectTaskService {
         projectTask.assignedTo = dto.assignedUserId;
 
         // Update assignedUserRole based on the user's role
-        if (assignedUser.role === Role.ANNOTATOR || assignedUser.role === Role.REVIEWER) {
+        if (
+          assignedUser.role === Role.ANNOTATOR ||
+          assignedUser.role === Role.REVIEWER
+        ) {
           projectTask.assignedUserRole = assignedUser.role;
         } else {
           projectTask.assignedUserRole = null;
@@ -184,7 +214,7 @@ export class ProjectTaskService {
           false,
           transactionalEntityManager,
         );
-        
+
         if (filesToAdd.length !== dto.fileIdsToAdd.length) {
           const foundFileIds = filesToAdd.map((file) => file.id);
           const missingFileIds = dto.fileIdsToAdd.filter(
@@ -206,7 +236,7 @@ export class ProjectTaskService {
           false,
           transactionalEntityManager,
         );
-        
+
         if (filesToRemove.length !== dto.fileIdsToRemove.length) {
           const foundFileIds = filesToRemove.map((file) => file.id);
           const missingFileIds = dto.fileIdsToRemove.filter(
@@ -224,7 +254,9 @@ export class ProjectTaskService {
 
       // Check that the final file IDs list is not empty
       if (projectTask.fileIds.length === 0) {
-        throw new InvalidProjectTaskException('A task must have at least one file assigned');
+        throw new InvalidProjectTaskException(
+          'A task must have at least one file assigned',
+        );
       }
 
       if (dto.status) {
@@ -243,7 +275,7 @@ export class ProjectTaskService {
 
   async Delete(id: string): Promise<void> {
     const projectTask = await this.projectTaskRepository.FindById(id, false);
-    
+
     if (!projectTask) {
       throw new ProjectTaskNotFoundException(id);
     }

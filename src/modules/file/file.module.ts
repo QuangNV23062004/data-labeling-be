@@ -14,7 +14,7 @@ import { FileLabelModule } from '../file-label/file-label.module';
   imports: [
     TypeOrmModule.forFeature([FileEntity]),
     StorageModule,
-    ProjectModule,
+    forwardRef(() => ProjectModule),
     AccountModule,
     forwardRef(() => FileLabelModule),
   ],

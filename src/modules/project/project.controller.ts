@@ -78,7 +78,6 @@ export class ProjectController {
     @Body() dto: UpdateProjectDto,
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<ProjectEntity> {
-
     return await this.projectService.Update(id, dto, image);
   }
 
@@ -118,6 +117,22 @@ export class ProjectController {
       id,
       includeDeleted,
       req?.accountInfo,
+    );
+  }
+
+  @ApiOperation({ summary: 'Complete Project' })
+  @ApiResponse({ status: 200, description: 'Project completed' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @Post('manager/complete')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async CompleteProject(
+    @Body() data: { projectId: string },
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    return await this.projectService.CompleteProject(
+      data.projectId,
+      req.accountInfo,
     );
   }
 }

@@ -8,6 +8,7 @@ import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
 import { BaseService } from 'src/common/service/base.service';
 import { AccountInfo } from 'src/interfaces/request';
 import {
+  ProjectCannotCompleteException,
   ProjectNotFoundException,
   UnsupportedProjectDataTypeException,
 } from './exceptions/project-exceptions.exception';
@@ -15,13 +16,28 @@ import { StorageService } from 'src/common/storage/storage.service';
 import { DataType } from './enums/data-type.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { ProjectConfigurationService } from '../project-configuration/project-configuration.service';
+import { FileRepository } from '../file/file.repository';
+import { FileLabelRepository } from '../file-label/file-label.repository';
+import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
+import { ReviewErrorRepository } from '../review-error/review-error.repository';
+import { AccountRatingRepository } from '../account-rating/account-rating.repository';
+import { AccountRatingHistoryRepository } from '../account-rating-history/account-rating-history.repository';
+import { AccountRatingEntity } from '../account-rating/account-rating.entity';
+import { AccountRatingHistoryEntity } from '../account-rating-history/account-rating-history.entity';
+import { ProjectDomain } from './project.domain';
+import { AnnotatorBreakdownItem } from 'src/types/annotator-breakdown-items.types';
 
 @Injectable()
 export class ProjectService extends BaseService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly storageService: StorageService,
+    private readonly fileLabelRepository: FileLabelRepository,
     private readonly projectConfigurationService: ProjectConfigurationService,
+    private readonly reviewErrorRepository: ReviewErrorRepository,
+    private readonly accountRatingRepository: AccountRatingRepository,
+    private readonly accountRatingHistoryRepository: AccountRatingHistoryRepository,
+    private readonly projectDomain: ProjectDomain,
   ) {
     super();
   }
@@ -61,7 +77,7 @@ export class ProjectService extends BaseService {
           transactionalEntityManager,
         );
       }
-      
+
       return createdProject;
     });
 
@@ -70,7 +86,7 @@ export class ProjectService extends BaseService {
       projectId: entity.id,
       availableLabelIds: request.availableLabelIds ?? [],
     });
-    
+
     return entity;
   }
 
@@ -130,7 +146,7 @@ export class ProjectService extends BaseService {
         projectId,
         transactionalEntityManager,
       );
-      
+
       // Cascade soft delete to project configuration
       await this.projectConfigurationService.SoftDeleteByProjectId(
         projectId,
@@ -169,5 +185,95 @@ export class ProjectService extends BaseService {
     );
     query.includeDeleted = safeIncludedDeleted;
     return await this.projectRepository.FindPaginated(query);
+  }
+
+  async CompleteProject(id: string, accountInfo?: AccountInfo) {
+    const em = await this.projectRepository.GetEntityManager();
+    return await em.transaction(async (transactionalEntityManager) => {
+      const project = await this.projectRepository.FindById(
+        id,
+        false,
+        transactionalEntityManager,
+      );
+
+      this.projectDomain.validateProjectExists(project, id);
+
+      const fileLabels = await this.fileLabelRepository.FindAll(
+        { projectId: id },
+        false,
+        transactionalEntityManager,
+        false,
+      );
+
+      this.projectDomain.validateProjectFileLabelsCanBeCompleted(
+        fileLabels,
+        id,
+      );
+
+      project!.projectStatus = ProjectStatus.COMPLETED;
+      const updatedProject = await this.projectRepository.Update(
+        project!,
+        transactionalEntityManager,
+      );
+
+      const metrics =
+        await this.fileLabelRepository.FindProjectAnnotatorMetrics(
+          id,
+          transactionalEntityManager,
+        );
+
+      const breakdownRows =
+        await this.fileLabelRepository.FindProjectAnnotatorErrorBreakdown(
+          id,
+          transactionalEntityManager,
+        );
+
+      const existing = await this.accountRatingRepository.FindByProjectId(
+        id,
+        false,
+        transactionalEntityManager,
+      );
+
+      const existingByAccount = new Map(existing.map((x) => [x.accountId, x]));
+
+      const breakdownByAnnotator: Map<string, AnnotatorBreakdownItem[]> =
+        this.projectDomain.breakdownByAnnotator(breakdownRows);
+
+      const ratingEntities: AccountRatingEntity[] =
+        this.projectDomain.MapRatingEntitiesFromMetrics(
+          metrics,
+          existingByAccount,
+          id,
+        );
+
+      const savedRatings = await this.accountRatingRepository.CreateBatch(
+        ratingEntities,
+        transactionalEntityManager,
+      );
+      const savedByAccount = new Map(savedRatings.map((x) => [x.accountId, x]));
+
+      const historyEntities: AccountRatingHistoryEntity[] =
+        this.projectDomain.MapRatingHistoryEntitiesFromMetrics(
+          metrics,
+          savedByAccount,
+          existingByAccount,
+          id,
+          breakdownByAnnotator,
+        );
+
+      await this.accountRatingHistoryRepository.CreateBatch(
+        historyEntities,
+        transactionalEntityManager,
+      );
+
+      return {
+        updatedProject,
+        metrics,
+        breakdown: breakdownByAnnotator,
+        ratings: savedRatings,
+        errors: breakdownRows,
+        history: historyEntities,
+      };
+    });
   }
 }
