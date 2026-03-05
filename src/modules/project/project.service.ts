@@ -26,6 +26,7 @@ import { AccountRatingEntity } from '../account-rating/account-rating.entity';
 import { AccountRatingHistoryEntity } from '../account-rating-history/account-rating-history.entity';
 import { ProjectDomain } from './project.domain';
 import { AnnotatorBreakdownItem } from 'src/types/annotator-breakdown-items.types';
+import { CompleteProjectDto } from './dtos/complete-project.dto';
 
 @Injectable()
 export class ProjectService extends BaseService {
@@ -187,7 +188,8 @@ export class ProjectService extends BaseService {
     return await this.projectRepository.FindPaginated(query);
   }
 
-  async CompleteProject(id: string, accountInfo?: AccountInfo) {
+  async CompleteProject(dto: CompleteProjectDto, accountInfo?: AccountInfo) {
+    const id = dto.projectId;
     const em = await this.projectRepository.GetEntityManager();
     return await em.transaction(async (transactionalEntityManager) => {
       const project = await this.projectRepository.FindById(
@@ -266,10 +268,12 @@ export class ProjectService extends BaseService {
         transactionalEntityManager,
       );
 
+      const breakdown = Object.fromEntries(breakdownByAnnotator);
+
       return {
         updatedProject,
         metrics,
-        breakdown: breakdownByAnnotator,
+        breakdown,
         ratings: savedRatings,
         errors: breakdownRows,
         history: historyEntities,

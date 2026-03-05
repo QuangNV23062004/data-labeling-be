@@ -28,7 +28,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean,
     em?: EntityManager,
-    ignoreReassigned: boolean = true,
+    excludeReassigned: boolean = true,
   ): Promise<FileLabelEntity[]> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
@@ -55,7 +55,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else if (!ignoreReassigned) {
+    } else if (!excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -118,7 +118,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean,
     em?: EntityManager,
-    ignoreReassigned: boolean = true,
+    excludeReassigned: boolean = true,
   ): Promise<PaginationResultDto<FileLabelEntity>> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
@@ -145,7 +145,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else if (!ignoreReassigned) {
+    } else if (!excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -473,13 +473,14 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
 
-    if (!includeDeleted) {
-      qb.leftJoinAndSelect('fileLabel.file', 'file');
-    } else {
-      qb.leftJoinAndSelect('fileLabel.file', 'file');
-    }
+    qb.leftJoinAndSelect('fileLabel.file', 'file');
     qb.where('file.projectId = :projectId', { projectId });
-    qb.where('fileLabel.annotatorId = :annotatorId', { annotatorId });
+    qb.andWhere('fileLabel.annotatorId = :annotatorId', { annotatorId });
+
+    if (!includeDeleted) {
+      qb.andWhere('fileLabel.deletedAt IS NULL');
+      qb.andWhere('file.deletedAt IS NULL');
+    }
 
     return await qb.getMany();
   }

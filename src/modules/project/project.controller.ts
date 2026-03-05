@@ -31,6 +31,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
 import { memoryStorage } from 'multer';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { CompleteProjectDto } from './dtos/complete-project.dto';
 
 @ApiTags('Project')
 @ApiBearerAuth()
@@ -127,12 +128,9 @@ export class ProjectController {
   @Post('manager/complete')
   @Roles(Role.ADMIN, Role.MANAGER)
   async CompleteProject(
-    @Body() data: { projectId: string },
+    @Body() dto: CompleteProjectDto,
     @Req() req: IAuthenticatedRequest,
   ) {
-    return await this.projectService.CompleteProject(
-      data.projectId,
-      req.accountInfo,
-    );
+    return await this.projectService.CompleteProject(dto, req.accountInfo);
   }
 }

@@ -103,6 +103,12 @@ export class AccountRatingHistoryRepository extends BaseRepository<AccountRating
       );
     }
 
+    if (query?.accountRatingId) {
+      qb.andWhere('account_rating_history.accountRatingId = :accountRatingId', {
+        accountRatingId: query.accountRatingId,
+      });
+    }
+
     if (!includeDeleted) {
       qb.andWhere('account_rating_history.deletedAt IS NULL');
       qb.leftJoinAndSelect(
@@ -136,6 +142,12 @@ export class AccountRatingHistoryRepository extends BaseRepository<AccountRating
         '(account_rating_history.changeReason ILIKE :search OR CAST(account_rating_history.accountRatingId AS TEXT) ILIKE :search)',
         { search: `%${safeSearch}%` },
       );
+    }
+
+    if (query?.accountRatingId) {
+      qb.andWhere('account_rating_history.accountRatingId = :accountRatingId', {
+        accountRatingId: query.accountRatingId,
+      });
     }
 
     if (!includeDeleted) {

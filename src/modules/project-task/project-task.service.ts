@@ -105,7 +105,9 @@ export class ProjectTaskService {
       ) {
         projectTask.assignedUserRole = assignedUser.role;
       } else {
-        projectTask.assignedUserRole = null;
+        throw new InvalidProjectTaskException(
+          `Assigned user must have role of either ${Role.ANNOTATOR} or ${Role.REVIEWER}, but got ${assignedUser.role}`,
+        );
       }
 
       const savedProjectTask = await this.projectTaskRepository.Create(

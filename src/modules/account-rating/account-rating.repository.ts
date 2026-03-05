@@ -133,6 +133,18 @@ export class AccountRatingRepository extends BaseRepository<AccountRatingEntity>
       );
     }
 
+    if (query?.accountId) {
+      qb.andWhere('account_rating.accountId = :accountId', {
+        accountId: query.accountId,
+      });
+    }
+
+    if (query?.projectId) {
+      qb.andWhere('account_rating.projectId = :projectId', {
+        projectId: query.projectId,
+      });
+    }
+
     if (!includeDeleted) {
       qb.andWhere('account_rating.deletedAt IS NULL');
       qb.leftJoinAndSelect(
@@ -156,7 +168,16 @@ export class AccountRatingRepository extends BaseRepository<AccountRatingEntity>
       qb.leftJoinAndSelect('account_rating.history', 'history');
     }
 
-    qb.orderBy('account_rating.createdAt', 'DESC');
+    const sortBy =
+      query?.sortBy &&
+      ['accountId', 'projectId', 'createdAt', 'updatedAt'].includes(
+        query.sortBy,
+      )
+        ? query.sortBy
+        : 'createdAt';
+    const order = query?.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    qb.orderBy(`account_rating.${sortBy}`, order);
 
     return qb.getMany();
   }
@@ -177,6 +198,18 @@ export class AccountRatingRepository extends BaseRepository<AccountRatingEntity>
       );
     }
 
+    if (query?.accountId) {
+      qb.andWhere('account_rating.accountId = :accountId', {
+        accountId: query.accountId,
+      });
+    }
+
+    if (query?.projectId) {
+      qb.andWhere('account_rating.projectId = :projectId', {
+        projectId: query.projectId,
+      });
+    }
+
     if (!includeDeleted) {
       qb.andWhere('account_rating.deletedAt IS NULL');
       qb.leftJoinAndSelect(
@@ -200,7 +233,16 @@ export class AccountRatingRepository extends BaseRepository<AccountRatingEntity>
       qb.leftJoinAndSelect('account_rating.history', 'history');
     }
 
-    qb.orderBy('account_rating.createdAt', 'DESC');
+    const sortBy =
+      query?.sortBy &&
+      ['accountId', 'projectId', 'createdAt', 'updatedAt'].includes(
+        query.sortBy,
+      )
+        ? query.sortBy
+        : 'createdAt';
+    const order = query?.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    qb.orderBy(`account_rating.${sortBy}`, order);
 
     const totalItems = await qb.getCount();
 

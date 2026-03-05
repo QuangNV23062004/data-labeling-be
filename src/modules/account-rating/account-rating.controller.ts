@@ -6,6 +6,7 @@ import { Role } from '../account/enums/role.enum';
 import { Roles } from 'src/decorators';
 import { FilterAccountRatingQueryDto } from './dtos/filter-account-rating-query.dto';
 import { IAuthenticatedRequest } from 'src/interfaces/request';
+import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import {
   ApiBody,
   ApiOperation,
@@ -48,14 +49,14 @@ export class AccountRatingController {
   @ApiResponse({
     status: 200,
     description: 'Account ratings fetched',
-    type: [AccountRatingEntity],
+    type: PaginationResultDto<AccountRatingEntity>,
   })
   async FindPaginated(
     @Query() query: FilterAccountRatingQueryDto,
     @Query('includeDeleted') includeDeleted: boolean = false,
     @Req() req: IAuthenticatedRequest,
-  ): Promise<AccountRatingEntity[]> {
-    return this.accountRatingService.FindAll(
+  ): Promise<PaginationResultDto<AccountRatingEntity>> {
+    return this.accountRatingService.FindPaginated(
       query,
       includeDeleted,
       req?.accountInfo,

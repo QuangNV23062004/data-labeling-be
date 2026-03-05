@@ -57,7 +57,7 @@ export class AccountRatingService extends BaseService {
       this.accountRatingDomain.validateCreateMode(existingRating, dto);
 
       if (existingRating && dto.mode === CreateMode.RECALCULATED) {
-        await this.accountRatingHistoryRepository.SoftDelete(
+        await this.accountRatingRepository.SoftDelete(
           existingRating.id,
           transactionalEntityManager,
         );

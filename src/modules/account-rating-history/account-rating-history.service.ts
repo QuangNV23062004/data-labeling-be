@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AccountRatingHistoryRepository } from './account-rating-history.repository';
 import { BaseService } from 'src/common/service/base.service';
 import { AccountInfo } from 'src/interfaces/request/authenticated-request.interface';
-import { FilterAccountDto } from '../account/dtos';
+import { FilterAccountRatingHistoryQueryDto } from './dtos/filter-account-rating-history-query.dto';
 
 @Injectable()
 export class AccountRatingHistoryService extends BaseService {
@@ -13,7 +13,7 @@ export class AccountRatingHistoryService extends BaseService {
   }
 
   async FindAll(
-    query: FilterAccountDto,
+    query: FilterAccountRatingHistoryQueryDto,
     includeDeleted: boolean,
     accountInfo?: AccountInfo,
   ) {
@@ -28,7 +28,7 @@ export class AccountRatingHistoryService extends BaseService {
   }
 
   async FindPaginated(
-    query: FilterAccountDto,
+    query: FilterAccountRatingHistoryQueryDto,
     includeDeleted: boolean,
     accountInfo?: AccountInfo,
   ) {
