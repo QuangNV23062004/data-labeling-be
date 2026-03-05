@@ -46,12 +46,13 @@ import { ProjectSnapshotModule } from './modules/project-snapshot/project-snapsh
 import { AccountRatingModule } from './modules/account-rating/account-rating.module';
 import { AccountRatingHistoryModule } from './modules/account-rating-history/account-rating-history.module';
 import { ChecklistAnswerModule } from './modules/checklist-answer/checklist-answer.module';
-
+import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
   imports: [
     //config module
     TypedConfigModule,
     JwtModule,
+    EventEmitterModule.forRoot(),
     MailerModule.forRootAsync({
       inject: [TypedConfigService],
       useFactory: (configService: TypedConfigService) => ({

@@ -5,6 +5,8 @@ import { EntityManager, Repository } from 'typeorm';
 import { FileEntity } from './file.entity';
 import { FilterFileQueryDto } from './dtos/filter-file-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
+
 @Injectable()
 export class FileRepository extends BaseRepository<FileEntity> {
   constructor(
@@ -80,13 +82,19 @@ export class FileRepository extends BaseRepository<FileEntity> {
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
-        'fileLabels.deletedAt IS NULL',
+        'fileLabels.deletedAt IS NULL AND fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
       );
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
 
-      qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
+      qb.leftJoinAndSelect(
+        'file.fileLabels',
+        'fileLabels',
+        'fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
+      );
     }
 
     return await qb.getMany();
@@ -158,13 +166,19 @@ export class FileRepository extends BaseRepository<FileEntity> {
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
-        'fileLabels.deletedAt IS NULL',
+        'fileLabels.deletedAt IS NULL AND fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
       );
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
 
-      qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
+      qb.leftJoinAndSelect(
+        'file.fileLabels',
+        'fileLabels',
+        'fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
+      );
     }
 
     const total = await qb.getCount();
@@ -215,12 +229,18 @@ export class FileRepository extends BaseRepository<FileEntity> {
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
-        'fileLabels.deletedAt IS NULL',
+        'fileLabels.deletedAt IS NULL AND fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
       );
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
+      qb.leftJoinAndSelect(
+        'file.fileLabels',
+        'fileLabels',
+        'fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
+      );
     }
 
     return await qb.getOne();
@@ -256,12 +276,18 @@ export class FileRepository extends BaseRepository<FileEntity> {
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
-        'fileLabels.deletedAt IS NULL',
+        'fileLabels.deletedAt IS NULL AND fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
       );
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
-      qb.leftJoinAndSelect('file.fileLabels', 'fileLabels');
+      qb.leftJoinAndSelect(
+        'file.fileLabels',
+        'fileLabels',
+        'fileLabels.status != :reassigned',
+        { reassigned: FileLabelStatusEnums.REASSIGNED },
+      );
     }
 
     return await qb.getMany();

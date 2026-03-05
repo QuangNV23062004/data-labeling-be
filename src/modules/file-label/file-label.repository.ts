@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Repository } from 'typeorm';
 import { FileLabelEntity } from './file-label.entity';
 import { FilterFileLabelQueryDto } from './dtos/filter-file-label-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { FileLabelStatusEnums } from './enums/file-label.enums';
+import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
+import { ReviewEntity } from '../review/review.entity';
+import { ReviewErrorEntity } from '../review-error/review-error.entity';
+import { ReviewErrorTypeEntity } from '../review-error-type/review-error-type.entity';
+import { ProjectAnnotatorErrorBreakdownRow } from 'src/types/project-annotator-break-down.types';
+import { ProjectAnnotatorMetricsRow } from 'src/types/project-annotator-metric.types';
+import { AccountRatingMetricsRow } from 'src/types/account-rating-metric-row.types';
+import { AccountRatingErrorBreakdownRow } from 'src/types/account-rating-error-breakdown-row.types';
 
 @Injectable()
 export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
@@ -20,6 +28,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean,
     em?: EntityManager,
+    excludeReassigned: boolean = true,
   ): Promise<FileLabelEntity[]> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
@@ -46,7 +55,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else {
+    } else if (!excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -96,6 +105,12 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
       qb.leftJoinAndSelect('fileLabel.checklistAnswers', 'checklistAnswers');
     }
 
+    if (query?.projectId) {
+      qb.andWhere('file.projectId = :projectId', {
+        projectId: query.projectId,
+      });
+    }
+
     return await qb.getMany();
   }
 
@@ -103,6 +118,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean,
     em?: EntityManager,
+    excludeReassigned: boolean = true,
   ): Promise<PaginationResultDto<FileLabelEntity>> {
     const repository = await this.GetRepository(em);
     const qb = repository.createQueryBuilder('fileLabel');
@@ -129,7 +145,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else {
+    } else if (!excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -177,6 +193,12 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
       qb.leftJoinAndSelect('fileLabel.annotator', 'annotator');
       qb.leftJoinAndSelect('fileLabel.reviewer', 'reviewer');
       qb.leftJoinAndSelect('fileLabel.checklistAnswers', 'checklistAnswers');
+    }
+
+    if (query?.projectId) {
+      qb.andWhere('file.projectId = :projectId', {
+        projectId: query.projectId,
+      });
     }
 
     const total = await qb.getCount();
@@ -429,5 +451,211 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
       return await repository.findOne({ where: { id } });
     }
     return null;
+  }
+
+  async BatchUpdateStatus(
+    ids: string[],
+    status: FileLabelStatusEnums,
+    em?: EntityManager,
+  ): Promise<boolean> {
+    const repository = await this.GetRepository(em);
+    const result = await repository.update({ id: In(ids) }, { status });
+    return result?.affected !== undefined && (result?.affected as number) > 0;
+  }
+
+  //use for account rating calculation, get all file labels for a specific annotator in a project
+  async FindByProjectIdAndAnnotatorId(
+    projectId: string,
+    annotatorId: string,
+    includeDeleted: boolean,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity[]> {
+    const repository = await this.GetRepository(em);
+    const qb = repository.createQueryBuilder('fileLabel');
+
+    qb.leftJoinAndSelect('fileLabel.file', 'file');
+    qb.where('file.projectId = :projectId', { projectId });
+    qb.andWhere('fileLabel.annotatorId = :annotatorId', { annotatorId });
+
+    if (!includeDeleted) {
+      qb.andWhere('fileLabel.deletedAt IS NULL');
+      qb.andWhere('file.deletedAt IS NULL');
+    }
+
+    return await qb.getMany();
+  }
+
+  async FindProjectAnnotatorMetrics(
+    projectId: string,
+    em?: EntityManager,
+  ): Promise<ProjectAnnotatorMetricsRow[]> {
+    const repository = await this.GetRepository(em);
+
+    return await repository
+      .createQueryBuilder('fileLabel')
+      .innerJoin('fileLabel.file', 'file')
+      .innerJoin(
+        ChecklistAnswerEntity,
+        'checklist',
+        'checklist.fileLabelId = fileLabel.id AND checklist.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewEntity,
+        'review',
+        'review.checklistAnswerId = checklist.id AND review.deletedAt IS NULL',
+      )
+      .leftJoin(
+        ReviewErrorEntity,
+        'reviewError',
+        'reviewError.reviewId = review.id AND reviewError.deletedAt IS NULL',
+      )
+      .leftJoin(
+        ReviewErrorTypeEntity,
+        'reviewErrorType',
+        'reviewErrorType.id = reviewError.reviewErrorTypeId AND reviewErrorType.deletedAt IS NULL',
+      )
+      .select('fileLabel.annotatorId', 'annotatorId')
+      .addSelect('COUNT(DISTINCT fileLabel.id)', 'totalFileLabeled')
+      .addSelect('COUNT(DISTINCT reviewError.id)', 'errorCount')
+      .addSelect(
+        'COALESCE(SUM(reviewErrorType.scoreImpact), 0)',
+        'totalPenalty',
+      )
+      .where('file.projectId = :projectId', { projectId })
+      .andWhere('file.deletedAt IS NULL')
+      .andWhere('fileLabel.deletedAt IS NULL')
+      .groupBy('fileLabel.annotatorId')
+      .getRawMany<ProjectAnnotatorMetricsRow>();
+  }
+
+  async FindProjectAnnotatorErrorBreakdown(
+    projectId: string,
+    em?: EntityManager,
+  ): Promise<ProjectAnnotatorErrorBreakdownRow[]> {
+    const repository = await this.GetRepository(em);
+
+    return await repository
+      .createQueryBuilder('fileLabel')
+      .innerJoin('fileLabel.file', 'file')
+      .innerJoin(
+        ChecklistAnswerEntity,
+        'checklist',
+        'checklist.fileLabelId = fileLabel.id AND checklist.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewEntity,
+        'review',
+        'review.checklistAnswerId = checklist.id AND review.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewErrorEntity,
+        'reviewError',
+        'reviewError.reviewId = review.id AND reviewError.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewErrorTypeEntity,
+        'reviewErrorType',
+        'reviewErrorType.id = reviewError.reviewErrorTypeId AND reviewErrorType.deletedAt IS NULL',
+      )
+      .select('fileLabel.annotatorId', 'annotatorId')
+      .addSelect('reviewErrorType.id', 'errorTypeId')
+      .addSelect('reviewErrorType.name', 'name')
+      .addSelect('reviewErrorType.description', 'description')
+      .addSelect('reviewErrorType.severity', 'severity')
+      .addSelect('reviewErrorType.scoreImpact', 'scoreImpact')
+      .addSelect('COUNT(reviewError.id)', 'count')
+      .addSelect('COALESCE(SUM(reviewErrorType.scoreImpact), 0)', 'totalImpact')
+      .where('file.projectId = :projectId', { projectId })
+      .andWhere('file.deletedAt IS NULL')
+      .andWhere('fileLabel.deletedAt IS NULL')
+      .groupBy('fileLabel.annotatorId')
+      .addGroupBy('reviewErrorType.id')
+      .addGroupBy('reviewErrorType.name')
+      .addGroupBy('reviewErrorType.description')
+      .addGroupBy('reviewErrorType.severity')
+      .addGroupBy('reviewErrorType.scoreImpact')
+      .getRawMany<ProjectAnnotatorErrorBreakdownRow>();
+  }
+
+  async FindAccountRatingMetrics(
+    projectId: string,
+    accountId: string,
+    em?: EntityManager,
+  ): Promise<AccountRatingMetricsRow | undefined> {
+    const repository = await this.GetRepository(em);
+
+    return await repository
+      .createQueryBuilder('fileLabel')
+      .innerJoin('fileLabel.file', 'file')
+      .leftJoin(
+        ReviewEntity,
+        'review',
+        'review.fileLabelId = fileLabel.id AND review.deletedAt IS NULL',
+      )
+      .leftJoin(
+        ReviewErrorEntity,
+        'reviewError',
+        'reviewError.reviewId = review.id AND reviewError.deletedAt IS NULL',
+      )
+      .leftJoin(
+        ReviewErrorTypeEntity,
+        'reviewErrorType',
+        'reviewErrorType.id = reviewError.reviewErrorTypeId AND reviewErrorType.deletedAt IS NULL',
+      )
+      .select('COUNT(DISTINCT fileLabel.id)', 'totalFileLabeled')
+      .addSelect('COUNT(DISTINCT reviewError.id)', 'errorCount')
+      .addSelect(
+        'COALESCE(SUM(reviewErrorType.scoreImpact), 0)',
+        'totalPenalty',
+      )
+      .where('file.projectId = :projectId', { projectId })
+      .andWhere('file.deletedAt IS NULL')
+      .andWhere('fileLabel.deletedAt IS NULL')
+      .andWhere('fileLabel.annotatorId = :accountId', { accountId })
+      .getRawOne<AccountRatingMetricsRow>();
+  }
+
+  async FindAccountRatingErrorBreakdown(
+    projectId: string,
+    accountId: string,
+    em?: EntityManager,
+  ): Promise<AccountRatingErrorBreakdownRow[]> {
+    const repository = await this.GetRepository(em);
+
+    return await repository
+      .createQueryBuilder('fileLabel')
+      .innerJoin('fileLabel.file', 'file')
+      .leftJoin(
+        ReviewEntity,
+        'review',
+        'review.fileLabelId = fileLabel.id AND review.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewErrorEntity,
+        'reviewError',
+        'reviewError.reviewId = review.id AND reviewError.deletedAt IS NULL',
+      )
+      .innerJoin(
+        ReviewErrorTypeEntity,
+        'reviewErrorType',
+        'reviewErrorType.id = reviewError.reviewErrorTypeId AND reviewErrorType.deletedAt IS NULL',
+      )
+      .select('reviewErrorType.id', 'errorTypeId')
+      .addSelect('reviewErrorType.name', 'name')
+      .addSelect('reviewErrorType.description', 'description')
+      .addSelect('reviewErrorType.severity', 'severity')
+      .addSelect('reviewErrorType.scoreImpact', 'scoreImpact')
+      .addSelect('COUNT(reviewError.id)', 'count')
+      .addSelect('COALESCE(SUM(reviewErrorType.scoreImpact), 0)', 'totalImpact')
+      .where('file.projectId = :projectId', { projectId })
+      .andWhere('file.deletedAt IS NULL')
+      .andWhere('fileLabel.deletedAt IS NULL')
+      .andWhere('fileLabel.annotatorId = :accountId', { accountId })
+      .groupBy('reviewErrorType.id')
+      .addGroupBy('reviewErrorType.name')
+      .addGroupBy('reviewErrorType.description')
+      .addGroupBy('reviewErrorType.severity')
+      .addGroupBy('reviewErrorType.scoreImpact')
+      .getRawMany<AccountRatingErrorBreakdownRow>();
   }
 }

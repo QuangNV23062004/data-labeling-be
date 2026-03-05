@@ -13,7 +13,7 @@ import { LabelChecklistQuestionModule } from '../label-checklist-question/label-
 @Module({
   imports: [
     TypeOrmModule.forFeature([FileLabelEntity]),
-    FileModule,
+    forwardRef(() => FileModule),
     LabelModule,
     LabelChecklistQuestionModule,
     forwardRef(() => ChecklistAnswerModule),

@@ -7,6 +7,7 @@ import {
   CannotHardDeleteFileLabelWithChecklistAnswersException,
   CannotRestoreFileLabelWithDeletedRelationsException,
   FileAccessNotAllowedException,
+  FileHasAlreadyBeenReassignedToAnotherAnnotatorException,
   FileLabelLifeCycleHasCompletedException,
   FileLabelNotFoundException,
   FileLabelPairAlreadyExistsException,
@@ -20,6 +21,17 @@ export class FileLabelDomain {
   validateFileExist(file: FileEntity | null, fileId: string): void {
     if (!file) {
       throw new FileNotFoundException(fileId);
+    }
+  }
+
+  validateFileLabelNotReassigned(existingFileLabel: FileLabelEntity): void {
+    if (
+      existingFileLabel &&
+      existingFileLabel.status === FileLabelStatusEnums.REASSIGNED
+    ) {
+      throw new FileHasAlreadyBeenReassignedToAnotherAnnotatorException(
+        existingFileLabel.fileId,
+      );
     }
   }
 

@@ -9,5 +9,6 @@ import { AccountRatingHistoryRepository } from './account-rating-history.reposit
   imports: [TypeOrmModule.forFeature([AccountRatingHistoryEntity])],
   controllers: [AccountRatingHistoryController],
   providers: [AccountRatingHistoryService, AccountRatingHistoryRepository],
+  exports: [AccountRatingHistoryService, AccountRatingHistoryRepository],
 })
 export class AccountRatingHistoryModule {}

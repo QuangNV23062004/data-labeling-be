@@ -68,3 +68,11 @@ export class FileLabelLifeCycleHasCompletedException extends BadRequestException
     );
   }
 }
+
+export class FileHasAlreadyBeenReassignedToAnotherAnnotatorException extends ConflictException {
+  constructor(fileId: string) {
+    super(
+      `File with ID "${fileId}" has already been reassigned to another annotator.`,
+    );
+  }
+}

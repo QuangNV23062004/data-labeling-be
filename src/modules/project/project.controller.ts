@@ -31,6 +31,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
 import { memoryStorage } from 'multer';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { CompleteProjectDto } from './dtos/complete-project.dto';
 
 @ApiTags('Project')
 @ApiBearerAuth()
@@ -78,7 +79,6 @@ export class ProjectController {
     @Body() dto: UpdateProjectDto,
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<ProjectEntity> {
-
     return await this.projectService.Update(id, dto, image);
   }
 
@@ -119,5 +119,18 @@ export class ProjectController {
       includeDeleted,
       req?.accountInfo,
     );
+  }
+
+  @ApiOperation({ summary: 'Complete Project' })
+  @ApiResponse({ status: 200, description: 'Project completed' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @Post('manager/complete')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async CompleteProject(
+    @Body() dto: CompleteProjectDto,
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    return await this.projectService.CompleteProject(dto, req.accountInfo);
   }
 }

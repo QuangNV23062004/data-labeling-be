@@ -32,6 +32,8 @@ import { VideoExtension } from './enums/video-extensions.enums';
 import { AudioExtension } from './enums/audio-extensions.enums';
 import { FileDomain } from './file.domain';
 import { Role } from '../account/enums/role.enum';
+import { FileLabelRepository } from '../file-label/file-label.repository';
+import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
 
 @Injectable()
 export class FileService extends BaseService {
@@ -42,6 +44,7 @@ export class FileService extends BaseService {
     private readonly accountRepository: AccountRepository,
     private readonly storageService: StorageService,
     private readonly projectRepository: ProjectRepository,
+    private readonly fileLabelRepository: FileLabelRepository,
     private readonly fileDomain: FileDomain,
   ) {
     super();
@@ -231,10 +234,22 @@ export class FileService extends BaseService {
             entity.project?.dataType,
           );
         }
-        Object.assign(entity, data);
+
         // console.log(data);
 
-        if (data?.annotatorId !== undefined) {
+        // console.log(
+        //   'block object condition: ',
+        //   data?.annotatorId !== undefined,
+        //   data.annotatorId,
+        //   entity?.annotatorId,
+        //   data.annotatorId !== entity?.annotatorId,
+        // );
+        if (
+          data?.annotatorId !== undefined &&
+          data.annotatorId !== entity?.annotatorId
+        ) {
+          // console.log('Updating annotator...');
+
           const annotator = await this.accountRepository.FindById(
             data.annotatorId,
             false,
@@ -243,11 +258,39 @@ export class FileService extends BaseService {
 
           this.fileDomain.validateAnnotator(annotator, data.annotatorId, id);
 
+          // If the file already has an annotator, mark this file's old annotator labels as reassigned.
+          const existingAnnotatorFileLabels = entity.annotatorId
+            ? await this.fileLabelRepository.FindAll(
+                { fileId: id, annotatorId: entity.annotatorId },
+                false,
+                transactionalEntityManager,
+              )
+            : [];
+
+          //only update ones with status not approved => aka not reviewed  & approved yet
+          const ids = existingAnnotatorFileLabels
+            .filter(
+              (fileLabel) => fileLabel.status !== FileLabelStatusEnums.APPROVED,
+            )
+            .map((fileLabel) => fileLabel.id);
+
+          // console.log('ids:', ids);
+          if (ids.length > 0) {
+            await this.fileLabelRepository.BatchUpdateStatus(
+              ids,
+              FileLabelStatusEnums.REASSIGNED,
+              transactionalEntityManager,
+            );
+          }
+
           entity.annotatorId = data.annotatorId;
           entity.annotator = annotator;
         }
 
-        if (data?.reviewerId !== undefined) {
+        if (
+          data?.reviewerId !== undefined &&
+          data.reviewerId !== entity?.reviewerId
+        ) {
           const reviewer = await this.accountRepository.FindById(
             data.reviewerId,
             false,
@@ -259,6 +302,7 @@ export class FileService extends BaseService {
           entity.reviewerId = data.reviewerId;
         }
 
+        Object.assign(entity, data);
         // console.log(entity);
         const result = await this.repository.Update(
           entity,

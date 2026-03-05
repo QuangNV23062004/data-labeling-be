@@ -23,4 +23,7 @@ export class AccountRatingHistoryEntity extends BaseEntity {
 
   @Column({ name: 'changed_at', type: 'timestamptz', nullable: false })
   changedAt: Date;
+
+  @Column({ name: 'review_error', type: 'jsonb', nullable: true })
+  reviewError: any;
 }

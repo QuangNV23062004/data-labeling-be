@@ -71,9 +71,9 @@ export class FileDomain {
       throw new ProjectNotFoundException(data.projectId);
     }
 
-    if (project.projectStatus !== ProjectStatus.DRAFT) {
-      throw new CanOnlyUploadFilesToDraftProjectsException(data.projectId);
-    }
+    // if (project.projectStatus !== ProjectStatus.DRAFT) {
+    //   throw new CanOnlyUploadFilesToDraftProjectsException(data.projectId);
+    // }
   }
 
   checkFileAndProjectType(file: Express.Multer.File, projectType: DataType) {
