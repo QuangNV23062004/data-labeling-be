@@ -79,7 +79,7 @@ export class ProjectSnapshotController {
   async UpdateSnapshot(
     @Param('id') id: string,
     @Body() dto: UpdateProjectSnapshotDto,
-  ): Promise<ProjectSnapshotEntity> {
+  ): Promise<Omit<ProjectSnapshotEntity, 'snapshotData'>> {
     return this.snapshotService.UpdateSnapshot(id, dto);
   }
 }

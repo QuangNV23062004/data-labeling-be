@@ -27,7 +27,7 @@ export class ProjectSnapshotRepository extends BaseRepository<ProjectSnapshotEnt
     projectId: string,
     query: FilterProjectSnapshotQueryDto,
     entityManager?: EntityManager,
-  ): Promise<PaginationResultDto<Omit<ProjectSnapshotEntity, 'snapshotData'>>> {
+  ): Promise<PaginationResultDto<ProjectSnapshotEntity>> {
     const repo = await this.GetRepository(entityManager);
     const page = query?.page ?? 1;
     const limit = query?.limit ?? 10;
