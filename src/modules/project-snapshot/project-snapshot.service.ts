@@ -46,6 +46,7 @@ export class ProjectSnapshotService {
       labels: file.fileLabels
         .filter(
           (fl) =>
+            fl.deletedAt === null &&
             fl.status === FileLabelStatusEnums.APPROVED ||
             fl.status === FileLabelStatusEnums.DONE,
         )
@@ -83,7 +84,7 @@ export class ProjectSnapshotService {
 
   async GetById(
     id: string,
-    includeData: boolean = true,
+    includeData: boolean = false,
   ): Promise<ProjectSnapshotEntity> {
     const entity = await this.snapshotRepository.FindById(id, includeData);
     if (!entity) {
@@ -95,7 +96,7 @@ export class ProjectSnapshotService {
   async UpdateSnapshot(
     id: string,
     dto: UpdateProjectSnapshotDto,
-  ): Promise<Omit<ProjectSnapshotEntity, 'snapshotData'>> {
+  ): Promise<void> {
     const entity = await this.snapshotRepository.FindById(id, false);
     if (!entity) {
       throw new ProjectSnapshotNotFoundException(id);
@@ -104,7 +105,6 @@ export class ProjectSnapshotService {
     if (dto.name !== undefined) fields.name = dto.name;
     if (dto.description !== undefined) fields.description = dto.description;
     await this.snapshotRepository.Update(id, fields);
-    return this.snapshotRepository.FindById(id, false) as Promise<Omit<ProjectSnapshotEntity, 'snapshotData'>>;
   }
 
   async DeleteSnapshot(id: string): Promise<void> {

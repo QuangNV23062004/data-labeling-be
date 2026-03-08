@@ -27,7 +27,7 @@ export class ProjectSnapshotRepository extends BaseRepository<ProjectSnapshotEnt
     projectId: string,
     query: FilterProjectSnapshotQueryDto,
     entityManager?: EntityManager,
-  ): Promise<PaginationResultDto<ProjectSnapshotEntity>> {
+  ): Promise<PaginationResultDto<Omit<ProjectSnapshotEntity, 'snapshotData'>>> {
     const repo = await this.GetRepository(entityManager);
     const page = query?.page ?? 1;
     const limit = query?.limit ?? 10;
@@ -116,12 +116,11 @@ export class ProjectSnapshotRepository extends BaseRepository<ProjectSnapshotEnt
   }
 
   async GetNextVersion(projectId: string): Promise<string> {
-    // deletedAt is a plain @Column (not @DeleteDateColumn), so TypeORM never
-    // adds an automatic soft-delete filter — all rows are already included.
     const result = await this.repository
       .createQueryBuilder('s')
       .select('MAX(CAST(SUBSTRING(s.version, 2) AS INTEGER))', 'maxN')
       .where('s.projectId = :projectId', { projectId })
+      .withDeleted()
       .getRawOne<{ maxN: number | null }>();
 
     return `v${(result?.maxN ?? 0) + 1}`;

@@ -38,9 +38,9 @@ export class ProjectSnapshotController {
   @Get(':id')
   async GetById(
     @Param('id') id: string,
-    @Query('includeData') includeData?: string,
+    @Query('includeData') includeData: boolean = false,
   ): Promise<ProjectSnapshotEntity> {
-    return this.snapshotService.GetById(id, includeData === 'true');
+    return this.snapshotService.GetById(id, includeData);
   }
 
   @ApiOperation({ summary: 'Create a project snapshot' })
@@ -75,11 +75,12 @@ export class ProjectSnapshotController {
   @ApiResponse({ status: 200, description: 'Snapshot updated' })
   @ApiResponse({ status: 404, description: 'Snapshot not found' })
   @Roles(Role.ADMIN, Role.MANAGER)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id')
   async UpdateSnapshot(
     @Param('id') id: string,
     @Body() dto: UpdateProjectSnapshotDto,
-  ): Promise<Omit<ProjectSnapshotEntity, 'snapshotData'>> {
+  ): Promise<void> {
     return this.snapshotService.UpdateSnapshot(id, dto);
   }
 }
