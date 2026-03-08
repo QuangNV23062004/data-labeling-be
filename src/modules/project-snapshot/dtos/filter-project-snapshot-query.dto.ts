@@ -1,20 +1,24 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class FilterProjectSnapshotQueryDto {
+  @ApiPropertyOptional({ description: 'Search by snapshot name' })
   @IsOptional()
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Page number (default: 1)', minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: 'Items per page (default: 10)', minimum: 1, default: 10 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   limit?: number = 10;
 }
