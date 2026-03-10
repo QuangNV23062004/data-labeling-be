@@ -110,7 +110,6 @@ export class FileService extends BaseService {
     const em = await this.repository.GetEntityManager();
     return em.transaction(async (transactionalEntityManager) => {
       const entity = new FileEntity();
-      const extension = file.mimetype.split('/')[1];
       const filePath = await this.storageService.uploadFilePath(
         `${data.projectId}/files`,
         file,
@@ -129,14 +128,7 @@ export class FileService extends BaseService {
         project?.dataType as DataType,
       );
 
-      const contentType =
-        ContentType[extension.toUpperCase() as keyof typeof ContentType];
-
-      if (!contentType) {
-        throw new UnknownFileFormatException(file.originalname);
-      }
-
-      entity.contentType = contentType;
+      entity.contentType = this.resolveContentType(file);
       entity.fileName = file.originalname;
       entity.fileSize = file.size;
       entity.fileUrl = filePath;
@@ -219,6 +211,7 @@ export class FileService extends BaseService {
             file,
           );
 
+          entity.contentType = this.resolveContentType(file);
           entity.fileName = file.originalname;
           entity.fileSize = file.size;
           entity.fileUrl = filePath;
@@ -398,5 +391,35 @@ export class FileService extends BaseService {
 
       return this.repository.Restore(id, transactionalEntityManager);
     });
+  }
+
+  async GetUnassignedFiles(
+    projectId: string,
+    role: Role,
+    includeDeleted: boolean,
+    accountInfo?: AccountInfo,
+  ) {
+    const safeIncludedDeleted = this.getIncludeDeleted(
+      accountInfo,
+      includeDeleted,
+    );
+    return this.repository.GetUnassignedFiles(
+      projectId,
+      role,
+      safeIncludedDeleted,
+    );
+  }
+
+  private resolveContentType(file: Express.Multer.File): ContentType {
+    const mimeType = file.mimetype.toLowerCase();
+    const contentType = Object.values(ContentType).find(
+      (type) => type === mimeType,
+    );
+
+    if (!contentType) {
+      throw new UnknownFileFormatException(file.originalname);
+    }
+
+    return contentType;
   }
 }

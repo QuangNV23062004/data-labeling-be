@@ -159,4 +159,22 @@ export class FileController {
     }
     return this.fileService.SoftDelete(id, request?.accountInfo);
   }
+
+  @ApiOperation({ summary: 'Get unassigned files for a project' })
+  @ApiResponse({ status: 200, description: 'List of unassigned files' })
+  @Get('unassigned/:id')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async GetUnassignedFiles(
+    @Param('id') projectId: string,
+    @Query('role') role: Role,
+    @Query('includeDeleted') includeDeleted: boolean,
+    @Req() request: IAuthenticatedRequest,
+  ) {
+    return this.fileService.GetUnassignedFiles(
+      projectId,
+      role,
+      includeDeleted,
+      request?.accountInfo,
+    );
+  }
 }

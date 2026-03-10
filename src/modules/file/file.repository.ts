@@ -331,4 +331,27 @@ export class FileRepository extends BaseRepository<FileEntity> {
     const result = await repository.update(ids, data);
     return result?.affected !== undefined && result?.affected > 0;
   }
+  async GetUnassignedFiles(
+    projectId: string,
+    role: string,
+    includeDeleted: boolean,
+    em?: EntityManager,
+  ): Promise<FileEntity[]> {
+    const repository = await this.GetRepository(em);
+    const qb = repository.createQueryBuilder('file');
+
+    qb.where('file.projectId = :projectId', { projectId });
+
+    if (role === 'annotatorId') {
+      qb.andWhere('file.annotatorId IS NULL');
+    } else if (role === 'reviewerId') {
+      qb.andWhere('file.reviewerId IS NULL');
+    }
+
+    if (!includeDeleted) {
+      qb.andWhere(`file.deletedAt IS NULL`);
+    }
+
+    return await qb.getMany();
+  }
 }
