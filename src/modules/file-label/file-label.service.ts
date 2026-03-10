@@ -11,6 +11,7 @@ import {
   FileAccessNotAllowedException,
   FileLabelPairAlreadyExistsException,
   InvalidFileLabelException,
+  LabelNotAllowedInProjectException,
   MissingRequiredFileLabelFieldException,
 } from './exceptions/file-label-exceptions.exception';
 import { FileRepository } from '../file/file.repository';
@@ -23,6 +24,7 @@ import { ChecklistAnswerDomain } from '../checklist-answer/checklist-answer.doma
 import { AnswerTypeEnum } from '../checklist-answer/enums/answer-type.enums';
 import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
 import { LabelChecklistQuestionRepository } from '../label-checklist-question/label-checklist-question.repository';
+import { ProjectConfigurationRepository } from '../project-configuration/project-configuration.repository';
 
 @Injectable()
 export class FileLabelService extends BaseService {
@@ -34,6 +36,7 @@ export class FileLabelService extends BaseService {
     private readonly checklistAnswerRepository: ChecklistAnswerRepository,
     private readonly checklistAnswerDomain: ChecklistAnswerDomain,
     private readonly labelChecklistQuestionRepository: LabelChecklistQuestionRepository,
+    private readonly projectConfigurationRepository: ProjectConfigurationRepository,
   ) {
     super();
   }
@@ -119,11 +122,11 @@ export class FileLabelService extends BaseService {
           transactionalEntityManager,
         );
 
-      this.fileLabelDomain.validateLabelExist(label);
+        this.fileLabelDomain.validateLabelExist(label);
 
-      data.labelId = label!.id;
+        data.labelId = label!.id;
 
-      this.fileLabelDomain.validateFileAccess(file!, accountInfo);
+        this.fileLabelDomain.validateFileAccess(file!, accountInfo);
 
         // Check if file already has this label assigned
         const existingFileLabel = await this.repository.FindByFileAndLabel(
@@ -133,11 +136,11 @@ export class FileLabelService extends BaseService {
           transactionalEntityManager,
         );
 
-      this.fileLabelDomain.validateExistingFileLabel(
-        existingFileLabel,
-        data.fileId,
-        data.labelId,
-      );
+        this.fileLabelDomain.validateExistingFileLabel(
+          existingFileLabel,
+          data.fileId,
+          data.labelId,
+        );
 
         if (accountInfo?.role === Role.ANNOTATOR) {
           entity.annotatorId = accountInfo?.sub as string;
@@ -166,7 +169,7 @@ export class FileLabelService extends BaseService {
           entity.reviewerId = data.reviewerId;
         }
       }
-      
+
       return this.repository.Create(entity, transactionalEntityManager);
     });
   }
@@ -198,20 +201,24 @@ export class FileLabelService extends BaseService {
       if (
         (data?.fileId && data.fileId !== entity!.fileId) ||
         (data?.labelId && data.labelId !== entity!.labelId)
-      ){
+      ) {
         const checkLabel = data?.labelId ? data.labelId : entity!.labelId;
         const checkFile = data?.fileId ? data.fileId : entity!.fileId;
         if (checkLabel && checkFile) {
-        const existingFileLabel = await this.repository.FindByFileAndLabel(
-          checkFile,
-          checkLabel,
-          false,
-          transactionalEntityManager,
-        );
-        if (existingFileLabel && existingFileLabel.id !== entity!.id) {
-          throw new FileLabelPairAlreadyExistsException(checkFile, checkLabel);
+          const existingFileLabel = await this.repository.FindByFileAndLabel(
+            checkFile,
+            checkLabel,
+            false,
+            transactionalEntityManager,
+          );
+          if (existingFileLabel && existingFileLabel.id !== entity!.id) {
+            throw new FileLabelPairAlreadyExistsException(
+              checkFile,
+              checkLabel,
+            );
+          }
         }
-      }}
+      }
 
       Object.assign(entity!, data);
       if (data?.fileId) {
@@ -320,6 +327,18 @@ export class FileLabelService extends BaseService {
         false,
         transactionalEntityManager,
       );
+
+      const projectConfig =
+        await this.projectConfigurationRepository.FindByProjectId(
+          file!.projectId,
+        );
+
+      if (!projectConfig?.availableLabelIds.includes(dto.labelId)) {
+        throw new LabelNotAllowedInProjectException(
+          dto.labelId,
+          file!.projectId,
+        );
+      }
 
       this.fileLabelDomain.validateLabelExist(label);
 

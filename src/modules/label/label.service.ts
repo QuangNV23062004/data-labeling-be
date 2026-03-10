@@ -17,12 +17,14 @@ import { FilterLabelQueryDto } from './dtos/filter-label-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { UpdateLabelDto } from './dtos/update-label.dto';
 import { BaseService } from 'src/common/service/base.service';
+import { ProjectConfigurationRepository } from '../project-configuration/project-configuration.repository';
 
 @Injectable()
 export class LabelService extends BaseService {
   constructor(
     private readonly labelRepository: LabelRepository,
     private readonly labelCategoryRepository: LabelCategoryRepository,
+    private readonly projectConfigurationRepository: ProjectConfigurationRepository,
   ) {
     super();
   }
@@ -247,5 +249,34 @@ export class LabelService extends BaseService {
         transactionalEntityManager,
       );
     });
+  }
+
+  async FindAllowedInProject(
+    projectId: string,
+    filter: FilterLabelQueryDto,
+    includeDeleted = false,
+    accountInfo?: AccountInfo,
+  ): Promise<LabelEntity[]> {
+    const includeDeletedSafe = this.getIncludeDeleted(
+      accountInfo,
+      includeDeleted,
+    );
+
+    const projectConfig =
+      await this.projectConfigurationRepository.FindByProjectId(projectId);
+    if (!projectConfig) {
+      return [];
+    }
+
+    const allowedLabelIds = projectConfig.availableLabelIds || [];
+    if (allowedLabelIds.length === 0) {
+      return [];
+    }
+
+    return this.labelRepository.FindAllInIds(
+      filter,
+      allowedLabelIds,
+      includeDeletedSafe,
+    );
   }
 }
