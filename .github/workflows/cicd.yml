@@ -78,7 +78,7 @@ jobs:
 
       - name: Start API
         run: |
-          npm run start:prod > app.log 2>&1 &
+          npm run start > app.log 2>&1 &
           echo $! > app.pid
 
       - name: Smoke test health-check endpoint
