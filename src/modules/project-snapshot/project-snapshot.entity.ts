@@ -21,7 +21,7 @@ export class ProjectSnapshotEntity extends BaseEntity {
   name: string;
 
   @Column({ name: 'description', type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   @Column({ name: 'snapshot_data', type: 'jsonb', nullable: false })
   snapshotData: any;

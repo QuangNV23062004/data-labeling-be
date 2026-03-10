@@ -1,9 +1,14 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateProjectSnapshotDto {
+  @ApiProperty({ description: 'Display name for the snapshot' })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  // Add your properties here
+  @ApiPropertyOptional({ description: 'Optional description of the snapshot' })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
