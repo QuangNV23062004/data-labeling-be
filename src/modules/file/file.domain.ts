@@ -6,6 +6,7 @@ import {
   ProjectTypeFileTypeMismatchException,
   StaffAssignedToFileInvalidRoleException,
   StaffAssignedToFileNotFoundException,
+  StaffAssignedToFileWithoutProjectTaskException,
   UnknownFileFormatException,
 } from './exceptions/file-exceptions.exception';
 import { DataType } from '../project/enums/data-type.enums';
@@ -119,5 +120,24 @@ export class FileDomain {
         entity?.projectId,
       );
     }
+  }
+
+  validateStaffHasTaskInProjectForFileAssignment(
+    hasTask: boolean,
+    staffId: string,
+    role: Role.ANNOTATOR | Role.REVIEWER,
+    projectId: string,
+    fileId: string,
+  ) {
+    if (hasTask) {
+      return;
+    }
+
+    throw new StaffAssignedToFileWithoutProjectTaskException(
+      staffId,
+      role === Role.ANNOTATOR ? 'annotator' : 'reviewer',
+      projectId,
+      fileId,
+    );
   }
 }

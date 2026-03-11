@@ -7,6 +7,7 @@ import { FileEntity } from './file.entity';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { CreateFileDto } from './dtos/create-file.dto';
 import { StorageService } from 'src/common/storage/storage.service';
+import { EntityManager } from 'typeorm';
 import {
   CannotHardDeleteAFileWithExistingFileLabelsException,
   CannotRestoreAFileInsideADeletedProjectException,
@@ -19,6 +20,7 @@ import {
   UnknownFileFormatException,
 } from './exceptions/file-exceptions.exception';
 import { ContentType } from './enums/content-type.enums';
+import { FileStatus } from './enums/file-status.enums';
 import { UpdateFileDto } from './dtos/update-file.dto';
 import { ProjectRepository } from '../project/project.repository';
 import { ProjectNotFoundException } from '../project/exceptions/project-exceptions.exception';
@@ -34,6 +36,7 @@ import { FileDomain } from './file.domain';
 import { Role } from '../account/enums/role.enum';
 import { FileLabelRepository } from '../file-label/file-label.repository';
 import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
+import { ProjectTaskEntity } from '../project-task/project-task.entity';
 
 @Injectable()
 export class FileService extends BaseService {
@@ -134,6 +137,7 @@ export class FileService extends BaseService {
       entity.fileUrl = filePath;
       entity.projectId = data.projectId;
       entity.uploadedById = accountInfo?.sub as string;
+      entity.status = data.status ?? FileStatus.IN_ANNOTATION;
 
       if (data.annotatorId !== undefined) {
         const annotator = await this.accountRepository.FindById(
@@ -188,6 +192,10 @@ export class FileService extends BaseService {
         if (!entity) {
           throw new FileNotFoundException(id);
         }
+
+        const previousProjectId = entity.projectId;
+        const previousAnnotatorId = entity.annotatorId;
+        const previousReviewerId = entity.reviewerId;
 
         if (data?.projectId) {
           const project = await this.projectRepository.FindById(
@@ -295,6 +303,44 @@ export class FileService extends BaseService {
           entity.reviewerId = data.reviewerId;
         }
 
+        const isProjectChanged = previousProjectId !== entity.projectId;
+        const nextAnnotatorId =
+          data?.annotatorId !== undefined
+            ? data.annotatorId
+            : previousAnnotatorId;
+        const nextReviewerId =
+          data?.reviewerId !== undefined ? data.reviewerId : previousReviewerId;
+
+        if (
+          nextAnnotatorId &&
+          (isProjectChanged || nextAnnotatorId !== previousAnnotatorId)
+        ) {
+          await this.syncFileIdAcrossTasksForRole(
+            transactionalEntityManager,
+            id,
+            Role.ANNOTATOR,
+            previousProjectId,
+            entity.projectId,
+            previousAnnotatorId,
+            nextAnnotatorId,
+          );
+        }
+
+        if (
+          nextReviewerId &&
+          (isProjectChanged || nextReviewerId !== previousReviewerId)
+        ) {
+          await this.syncFileIdAcrossTasksForRole(
+            transactionalEntityManager,
+            id,
+            Role.REVIEWER,
+            previousProjectId,
+            entity.projectId,
+            previousReviewerId,
+            nextReviewerId,
+          );
+        }
+
         Object.assign(entity, data);
         // console.log(entity);
         const result = await this.repository.Update(
@@ -330,6 +376,30 @@ export class FileService extends BaseService {
       if (!entity) {
         throw new FileNotFoundException(id);
       }
+
+      await this.syncFileIdAcrossTasksForRole(
+        transactionalEntityManager,
+        id,
+        Role.ANNOTATOR,
+        entity.projectId,
+        entity.projectId,
+        entity.annotatorId,
+        null,
+      );
+
+      await this.syncFileIdAcrossTasksForRole(
+        transactionalEntityManager,
+        id,
+        Role.REVIEWER,
+        entity.projectId,
+        entity.projectId,
+        entity.reviewerId,
+        null,
+      );
+
+      entity.annotatorId = null;
+      entity.reviewerId = null;
+      await this.repository.Update(entity, transactionalEntityManager);
 
       return this.repository.SoftDelete(id, transactionalEntityManager);
     });
@@ -421,5 +491,80 @@ export class FileService extends BaseService {
     }
 
     return contentType;
+  }
+
+  private async findLatestTaskForAssigneeAndRole(
+    em: EntityManager,
+    projectId: string,
+    assigneeId: string,
+    role: Role.ANNOTATOR | Role.REVIEWER,
+  ): Promise<ProjectTaskEntity | null> {
+    const repository = em.getRepository(ProjectTaskEntity);
+
+    return repository
+      .createQueryBuilder('task')
+      .where('task.projectId = :projectId', { projectId })
+      .andWhere('task.assignedTo = :assigneeId', { assigneeId })
+      .andWhere('task.assignedUserRole = :role', { role })
+      .andWhere('task.deletedAt IS NULL')
+      .orderBy('task.updatedAt', 'DESC')
+      .addOrderBy('task.createdAt', 'DESC')
+      .getOne();
+  }
+
+  private async syncFileIdAcrossTasksForRole(
+    em: EntityManager,
+    fileId: string,
+    role: Role.ANNOTATOR | Role.REVIEWER,
+    previousProjectId: string,
+    nextProjectId: string,
+    previousAssigneeId: string | null,
+    nextAssigneeId: string | null,
+  ): Promise<void> {
+    const taskRepository = em.getRepository(ProjectTaskEntity);
+
+    const nextTask = nextAssigneeId
+      ? await this.findLatestTaskForAssigneeAndRole(
+          em,
+          nextProjectId,
+          nextAssigneeId,
+          role,
+        )
+      : null;
+
+    if (nextAssigneeId) {
+      this.fileDomain.validateStaffHasTaskInProjectForFileAssignment(
+        Boolean(nextTask),
+        nextAssigneeId,
+        role,
+        nextProjectId,
+        fileId,
+      );
+    }
+
+    if (previousAssigneeId) {
+      const previousTask = await this.findLatestTaskForAssigneeAndRole(
+        em,
+        previousProjectId,
+        previousAssigneeId,
+        role,
+      );
+
+      if (
+        previousTask &&
+        (!nextTask || previousTask.id !== nextTask.id) &&
+        previousTask.fileIds.includes(fileId)
+      ) {
+        previousTask.fileIds = previousTask.fileIds.filter(
+          (existingId) => existingId !== fileId,
+        );
+        await taskRepository.save(previousTask);
+      }
+    }
+
+    if (nextTask && !nextTask.fileIds.includes(fileId)) {
+      nextTask.fileIds = [...nextTask.fileIds, fileId];
+      await taskRepository.save(nextTask);
+    }
   }
 }

@@ -11,6 +11,7 @@ import { Type } from 'class-transformer';
 import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 import { ContentType } from '../enums/content-type.enums';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { FileStatus } from '../enums/file-status.enums';
 
 export class FilterFileQueryDto extends BasePaginationQueryDto {
   @ApiPropertyOptional({
@@ -81,4 +82,13 @@ export class FilterFileQueryDto extends BasePaginationQueryDto {
   @IsOptional()
   @IsEnum(ContentType)
   contentType?: ContentType;
+
+  @ApiPropertyOptional({
+    description: 'Filter by file workflow status',
+    example: FileStatus.PENDING_REVIEW,
+    enum: FileStatus,
+  })
+  @IsOptional()
+  @IsEnum(FileStatus)
+  status?: FileStatus;
 }

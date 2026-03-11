@@ -66,6 +66,12 @@ export class FileRepository extends BaseRepository<FileEntity> {
       });
     }
 
+    if (query?.status) {
+      qb.andWhere(`file.status = :status`, {
+        status: query.status,
+      });
+    }
+
     if (!includeDeleted) {
       qb.andWhere(`file.deletedAt IS NULL`);
       qb.leftJoinAndSelect(
@@ -147,6 +153,12 @@ export class FileRepository extends BaseRepository<FileEntity> {
     if (query?.contentType) {
       qb.andWhere(`file.contentType = :contentType`, {
         contentType: query.contentType,
+      });
+    }
+
+    if (query?.status) {
+      qb.andWhere(`file.status = :status`, {
+        status: query.status,
       });
     }
 

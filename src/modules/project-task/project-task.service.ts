@@ -13,12 +13,12 @@ import {
   MultipleFilesNotFoundException,
   ProjectTaskNotFoundException,
   InvalidProjectTaskException,
-  FailedToAssignUserToFile,
 } from './exceptions/project-task-exceptions.exception';
 import { ProjectTaskStatus } from './enums/task-status.enums';
 import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from '../account/enums/role.enum';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class ProjectTaskService {
@@ -115,22 +115,11 @@ export class ProjectTaskService {
         transactionalEntityManager,
       );
 
-      // Update files
-      const data =
-        assignedUser?.role === Role.ANNOTATOR
-          ? { annotatorId: assignedUser.id as string }
-          : assignedUser?.role === Role.REVIEWER
-            ? { reviewerId: assignedUser.id as string }
-            : {};
-
-      const result = await this.fileRepository.BatchUpdate(
-        dto.fileIds,
-        data,
+      await this.syncFileAssigneesFromTasks(
         transactionalEntityManager,
+        dto.fileIds,
+        [assignedUser.role as Role.ANNOTATOR | Role.REVIEWER],
       );
-
-      if (!result)
-        throw new FailedToAssignUserToFile(dto.assignedUserId, dto.fileIds);
 
       return savedProjectTask;
     });
@@ -185,6 +174,9 @@ export class ProjectTaskService {
       if (!projectTask) {
         throw new ProjectTaskNotFoundException(id);
       }
+
+      const previousAssignedRole = projectTask.assignedUserRole;
+      const previousFileIds = [...projectTask.fileIds];
 
       // 2. Validate assigned user exists and update fields (if provided)
       if (dto.assignedUserId) {
@@ -271,16 +263,120 @@ export class ProjectTaskService {
       );
       const updatedProjectTask = await repository.save(projectTask);
 
+      const impactedFileIds = Array.from(
+        new Set([...previousFileIds, ...updatedProjectTask.fileIds]),
+      );
+
+      const rolesToSync = new Set<Role.ANNOTATOR | Role.REVIEWER>();
+      if (
+        previousAssignedRole === Role.ANNOTATOR ||
+        previousAssignedRole === Role.REVIEWER
+      ) {
+        rolesToSync.add(previousAssignedRole);
+      }
+      if (
+        updatedProjectTask.assignedUserRole === Role.ANNOTATOR ||
+        updatedProjectTask.assignedUserRole === Role.REVIEWER
+      ) {
+        rolesToSync.add(updatedProjectTask.assignedUserRole);
+      }
+
+      await this.syncFileAssigneesFromTasks(
+        transactionalEntityManager,
+        impactedFileIds,
+        Array.from(rolesToSync),
+      );
+
       return updatedProjectTask;
     });
   }
 
   async Delete(id: string): Promise<void> {
-    const projectTask = await this.projectTaskRepository.FindById(id, false);
+    const em = await this.projectTaskRepository.GetEntityManager();
+    await em.transaction(async (transactionalEntityManager) => {
+      const projectTask = await this.projectTaskRepository.FindById(
+        id,
+        false,
+        transactionalEntityManager,
+      );
 
-    if (!projectTask) {
-      throw new ProjectTaskNotFoundException(id);
+      if (!projectTask) {
+        throw new ProjectTaskNotFoundException(id);
+      }
+
+      const deleted = await this.projectTaskRepository.Delete(
+        id,
+        transactionalEntityManager,
+      );
+
+      if (!deleted) {
+        throw new ProjectTaskNotFoundException(id);
+      }
+
+      if (
+        projectTask.assignedUserRole === Role.ANNOTATOR ||
+        projectTask.assignedUserRole === Role.REVIEWER
+      ) {
+        await this.syncFileAssigneesFromTasks(
+          transactionalEntityManager,
+          projectTask.fileIds,
+          [projectTask.assignedUserRole],
+        );
+      }
+    });
+  }
+
+  private async findLatestTaskAssigneeForFileByRole(
+    em: EntityManager,
+    fileId: string,
+    role: Role.ANNOTATOR | Role.REVIEWER,
+  ): Promise<string | null> {
+    const repository = await this.projectTaskRepository.GetRepository(em);
+
+    const task = await repository
+      .createQueryBuilder('projectTask')
+      .where('projectTask.deletedAt IS NULL')
+      .andWhere('projectTask.assignedUserRole = :role', { role })
+      .andWhere(':fileId = ANY(projectTask.fileIds)', { fileId })
+      .orderBy('projectTask.updatedAt', 'DESC')
+      .addOrderBy('projectTask.createdAt', 'DESC')
+      .getOne();
+
+    return task?.assignedTo ?? null;
+  }
+
+  private async syncFileAssigneesFromTasks(
+    em: EntityManager,
+    fileIds: string[],
+    roles: Array<Role.ANNOTATOR | Role.REVIEWER>,
+  ): Promise<void> {
+    if (!fileIds.length || !roles.length) {
+      return;
     }
-    await this.projectTaskRepository.Delete(id);
+
+    const uniqueFileIds = Array.from(new Set(fileIds));
+
+    for (const fileId of uniqueFileIds) {
+      const updateData: {
+        annotatorId?: string | null;
+        reviewerId?: string | null;
+      } = {};
+
+      for (const role of roles) {
+        const assigneeId = await this.findLatestTaskAssigneeForFileByRole(
+          em,
+          fileId,
+          role,
+        );
+
+        if (role === Role.ANNOTATOR) {
+          updateData.annotatorId = assigneeId;
+        } else if (role === Role.REVIEWER) {
+          updateData.reviewerId = assigneeId;
+        }
+      }
+
+      await this.fileRepository.BatchUpdate([fileId], updateData, em);
+    }
   }
 }

@@ -96,7 +96,7 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Projects retrieved' })
   @Roles(Role.ADMIN, Role.MANAGER)
   @Get()
-  @Get('manager')
+  // @Get('manager')
   async GetPaginated(
     @Query() query: FilterProjectQueryDto,
     @Req() req: IAuthenticatedRequest,

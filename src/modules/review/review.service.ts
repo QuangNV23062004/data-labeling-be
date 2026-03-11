@@ -29,6 +29,7 @@ import { SubmitReviewsDto } from './dtos/submit-reviews.dto';
 import { ChecklistAnswerDomain } from '../checklist-answer/checklist-answer.domain';
 import { FileLabelRepository } from '../file-label/file-label.repository';
 import { FileLabelDomain } from '../file-label/file-label.domain';
+import { FileLabelEntity } from '../file-label/file-label.entity';
 import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
 import { LabelChecklistQuestionRepository } from '../label-checklist-question/label-checklist-question.repository';
 import { ReviewErrorEntity } from '../review-error/review-error.entity';
@@ -36,6 +37,9 @@ import { ReviewErrorRepository } from '../review-error/review-error.repository';
 import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
 import { ReviewErrorTypeRepository } from '../review-error-type/review-error-type.repository';
 import { ReviewerAggregationStats } from './review.repository';
+import { EntityManager } from 'typeorm';
+import { FileEntity } from '../file/file.entity';
+import { FileStatus } from '../file/enums/file-status.enums';
 
 @Injectable()
 export class ReviewService extends BaseService {
@@ -522,9 +526,64 @@ export class ReviewService extends BaseService {
         );
       }
 
+      await this.recomputeFileStatusAfterReviewerSubmit(
+        fileLabel!.fileId,
+        transactionalEntityManager,
+      );
+
       reviewEntity.checklistAnswer = checklistAnswerEntity;
       reviewEntity.reviewErrors = reviewErrors;
       return reviewEntity;
     });
+  }
+
+  private async recomputeFileStatusAfterReviewerSubmit(
+    fileId: string,
+    em: EntityManager,
+  ): Promise<void> {
+    const fileLabelRepository = em.getRepository(FileLabelEntity);
+    const fileRepository = em.getRepository(FileEntity);
+
+    const labels = await fileLabelRepository
+      .createQueryBuilder('fileLabel')
+      .where('fileLabel.fileId = :fileId', { fileId })
+      .andWhere('fileLabel.deletedAt IS NULL')
+      .andWhere('fileLabel.status != :reassigned', {
+        reassigned: FileLabelStatusEnums.REASSIGNED,
+      })
+      .getMany();
+
+    if (labels.length === 0) {
+      return;
+    }
+
+    const statuses = labels.map((label) => label.status);
+
+    // Rule 1: all approved => file approved
+    if (statuses.every((status) => status === FileLabelStatusEnums.APPROVED)) {
+      await fileRepository.update(fileId, { status: FileStatus.APPROVED });
+      return;
+    }
+
+    // Rule 2: any pending/in-progress => keep current file status unchanged
+    const hasPending = statuses.some(
+      (status) =>
+        status === FileLabelStatusEnums.PENDING_REVIEW ||
+        status === FileLabelStatusEnums.IN_PROGRESS,
+    );
+    if (hasPending) {
+      return;
+    }
+
+    // Rule 3: if all reviewed (approved/rejected) and at least one rejected => requires_fix
+    const allReviewed = statuses.every(
+      (status) =>
+        status === FileLabelStatusEnums.APPROVED ||
+        status === FileLabelStatusEnums.REJECTED,
+    );
+
+    if (allReviewed && statuses.includes(FileLabelStatusEnums.REJECTED)) {
+      await fileRepository.update(fileId, { status: FileStatus.REQUIRES_FIX });
+    }
   }
 }

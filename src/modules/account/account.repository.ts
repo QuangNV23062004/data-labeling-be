@@ -60,7 +60,11 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
       .andWhere('account.role IN (:...role)', { role });
 
     if (query?.search && query?.searchBy) {
-      const searchField = `account.${query.searchBy}`;
+      const isEnumSearchField =
+        query.searchBy === 'role' || query.searchBy === 'status';
+      const searchField = isEnumSearchField
+        ? `CAST(account.${query.searchBy} AS TEXT)`
+        : `account.${query.searchBy}`;
       qb.andWhere(`${searchField} ILIKE :search`, {
         search: `%${query.search.trim()}%`,
       });
@@ -92,7 +96,11 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
       .andWhere('account.role IN (:...role)', { role });
 
     if (query?.search && query?.searchBy) {
-      const searchField = `account.${query.searchBy}`;
+      const isEnumSearchField =
+        query.searchBy === 'role' || query.searchBy === 'status';
+      const searchField = isEnumSearchField
+        ? `CAST(account.${query.searchBy} AS TEXT)`
+        : `account.${query.searchBy}`;
       qb.andWhere(`${searchField} ILIKE :search`, {
         search: `%${query.search.trim()}%`,
       });

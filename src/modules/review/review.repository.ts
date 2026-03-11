@@ -45,9 +45,29 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
         'errors',
         'errors.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'errors.reviewErrorType',
+        'errorType',
+        'errorType.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'review.fileLabel',
+        'fileLabel',
+        'fileLabel.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
     } else {
       qb.leftJoinAndSelect('review.checklistAnswer', 'checklistAnswer');
       qb.leftJoinAndSelect('review.reviewErrors', 'errors');
+      qb.leftJoinAndSelect('errors.reviewErrorType', 'errorType');
+      qb.leftJoinAndSelect('review.fileLabel', 'fileLabel');
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
     }
 
     return qb.getOne();
@@ -74,10 +94,31 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
         'errors',
         'errors.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'errors.reviewErrorType',
+        'errorType',
+        'errorType.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'review.fileLabel',
+        'fileLabel',
+        'fileLabel.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
     } else {
       qb.leftJoinAndSelect('review.checklistAnswer', 'checklistAnswer');
       qb.leftJoinAndSelect('review.reviewErrors', 'errors');
+      qb.leftJoinAndSelect('errors.reviewErrorType', 'errorType');
+      qb.leftJoinAndSelect('review.fileLabel', 'fileLabel');
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
     }
+
     return qb.getMany();
   }
 
@@ -101,9 +142,29 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
         'errors',
         'errors.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'errors.reviewErrorType',
+        'errorType',
+        'errorType.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'review.fileLabel',
+        'fileLabel',
+        'fileLabel.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
     } else {
       qb.leftJoinAndSelect('review.checklistAnswer', 'checklistAnswer');
       qb.leftJoinAndSelect('review.reviewErrors', 'errors');
+      qb.leftJoinAndSelect('errors.reviewErrorType', 'errorType');
+      qb.leftJoinAndSelect('review.fileLabel', 'fileLabel');
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
     }
 
     if (query?.search && query?.searchBy) {
@@ -163,9 +224,29 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
         'errors',
         'errors.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'errors.reviewErrorType',
+        'errorType',
+        'errorType.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'review.fileLabel',
+        'fileLabel',
+        'fileLabel.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
     } else {
       qb.leftJoinAndSelect('review.checklistAnswer', 'checklistAnswer');
       qb.leftJoinAndSelect('review.reviewErrors', 'errors');
+      qb.leftJoinAndSelect('errors.reviewErrorType', 'errorType');
+      qb.leftJoinAndSelect('review.fileLabel', 'fileLabel');
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
     }
 
     if (query?.search && query?.searchBy) {
@@ -287,9 +368,29 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
         'errors',
         'errors.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'errors.reviewErrorType',
+        'errorType',
+        'errorType.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'review.fileLabel',
+        'fileLabel',
+        'fileLabel.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect('fileLabel.file', 'file', 'file.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'fileLabel.label',
+        'label',
+        'label.deletedAt IS NULL',
+      );
     } else {
       qb.leftJoinAndSelect('review.checklistAnswer', 'checklistAnswer');
       qb.leftJoinAndSelect('review.reviewErrors', 'errors');
+      qb.leftJoinAndSelect('errors.reviewErrorType', 'errorType');
+      qb.leftJoinAndSelect('review.fileLabel', 'fileLabel');
+      qb.leftJoinAndSelect('fileLabel.file', 'file');
+      qb.leftJoinAndSelect('fileLabel.label', 'label');
     }
 
     return qb.getOne();
