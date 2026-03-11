@@ -76,3 +76,11 @@ export class FileHasAlreadyBeenReassignedToAnotherAnnotatorException extends Con
     );
   }
 }
+
+export class LabelNotAllowedInProjectException extends BadRequestException {
+  constructor(labelId: string, projectId: string) {
+    super(
+      `Label with ID "${labelId}" is not allowed in Project with ID "${projectId}".`,
+    );
+  }
+}

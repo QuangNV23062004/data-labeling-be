@@ -9,6 +9,7 @@ import { LabelModule } from '../label/label.module';
 import { FileLabelDomain } from './file-label.domain';
 import { ChecklistAnswerModule } from '../checklist-answer/checklist-answer.module';
 import { LabelChecklistQuestionModule } from '../label-checklist-question/label-checklist-question.module';
+import { ProjectConfigurationModule } from '../project-configuration/project-configuration.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { LabelChecklistQuestionModule } from '../label-checklist-question/label-
     forwardRef(() => FileModule),
     LabelModule,
     LabelChecklistQuestionModule,
+    ProjectConfigurationModule,
     forwardRef(() => ChecklistAnswerModule),
   ],
   controllers: [FileLabelController],

@@ -35,6 +35,7 @@ import { ReviewErrorEntity } from '../review-error/review-error.entity';
 import { ReviewErrorRepository } from '../review-error/review-error.repository';
 import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
 import { ReviewErrorTypeRepository } from '../review-error-type/review-error-type.repository';
+import { ReviewerAggregationStats } from './review.repository';
 
 @Injectable()
 export class ReviewService extends BaseService {
@@ -101,6 +102,12 @@ export class ReviewService extends BaseService {
     );
 
     return this.reviewRepository.FindPaginated(query, safeIncludeDeleted);
+  }
+
+  async GetReviewerAggregationStats(
+    reviewerId: string,
+  ): Promise<ReviewerAggregationStats> {
+    return this.reviewRepository.GetReviewerAggregationStats(reviewerId);
   }
 
   async Create(dto: CreateReviewDto, accountInfo?: AccountInfo) {

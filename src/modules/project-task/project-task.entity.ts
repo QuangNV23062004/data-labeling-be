@@ -61,7 +61,7 @@ export class ProjectTaskEntity extends BaseEntity {
     name: 'file_ids',
     type: 'uuid',
     array: true,
-    default: () => "ARRAY[]::uuid[]",
+    default: () => 'ARRAY[]::uuid[]',
   })
   fileIds: string[];
 

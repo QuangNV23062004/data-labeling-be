@@ -171,6 +171,59 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     return qb.getMany();
   }
 
+  async FindAllInIds(
+    query: FilterLabelQueryDto,
+    ids: string[],
+    includeDeleted: boolean,
+    entityManager?: EntityManager,
+  ): Promise<LabelEntity[]> {
+    const repository = await this.GetRepository(entityManager);
+    const qb = repository.createQueryBuilder('label');
+
+    if (query?.search && query?.searchBy) {
+      const searchField = `label.${query.searchBy}`;
+      qb.andWhere(`${searchField} ILIKE :search`, {
+        search: `%${query.search}%`,
+      });
+    }
+
+    if (query?.orderBy && query?.order) {
+      const orderField = `label.${query.orderBy}`;
+      qb.orderBy(orderField, query.order.toUpperCase() as 'ASC' | 'DESC');
+    }
+
+    if (!includeDeleted) {
+      qb.andWhere('label.deletedAt IS NULL');
+      qb.leftJoinAndSelect(
+        'label.categories',
+        'labelCategory',
+        'labelCategory.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'label.presets',
+        'preset',
+        'preset.deletedAt IS NULL',
+      );
+    } else {
+      qb.leftJoinAndSelect('label.categories', 'labelCategory');
+      qb.leftJoinAndSelect('label.presets', 'preset');
+    }
+
+    if (query?.categoryIds && query.categoryIds.length > 0) {
+      let condition = 'category.id IN (:...categoryIds)';
+      const params: any = { categoryIds: query.categoryIds };
+
+      if (!includeDeleted) {
+        condition += ' AND category.deletedAt IS NULL';
+      }
+      qb.innerJoin('label.categories', 'category', condition, params);
+    }
+
+    qb.andWhere('label.id IN (:...ids)', { ids });
+
+    return qb.getMany();
+  }
+
   async FindPaginated(
     query: FilterLabelQueryDto,
     includeDeleted: boolean,

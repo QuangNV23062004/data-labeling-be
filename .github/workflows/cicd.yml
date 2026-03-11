@@ -1,0 +1,196 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/data-labeling-be
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Smoke Test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: data_labeling_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d data_labeling_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TZ: Asia/Ho_Chi_Minh
+      API_PREFIX: api
+      API_VERSION: v1
+      NODE_ENV: development
+      PORT: 2000
+      SERVER_HOST: http://localhost
+      CLIENT_URL_1: http://localhost:3000
+      CLIENT_URL_2: http://localhost:5173
+      DB_TYPE: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: data_labeling_db
+      DB_SYNCHRONIZE: true
+      DB_LOGGING: false
+      DB_SSL: false
+      JWT_ACCESS_PUBLIC_SECRET: ci_access_public
+      JWT_ACCESS_PRIVATE_SECRET: ci_access_private
+      JWT_ACCESS_EXPIRES_IN: 1d
+      JWT_REFRESH_PUBLIC_SECRET: ci_refresh_public
+      JWT_REFRESH_PRIVATE_SECRET: ci_refresh_private
+      JWT_REFRESH_EXPIRES_IN: 30d
+      JWT_RESET_PASSWORD_SECRET: ci_reset_secret
+      JWT_RESET_PASSWORD_EXPIRES_IN: 30m
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_USER: ci@example.com
+      EMAIL_PASSWORD: ci_dummy_password
+      BLOB_SAS_TOKEN: ci_dummy_token
+      BLOB_SAS_URL: https://example.blob.core.windows.net
+      BLOB_CONTAINER_NAME: data
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Restore dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Start API
+        run: |
+          npm run start > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Smoke test health-check endpoint
+        run: |
+          PREFIX="${API_PREFIX#/}"
+          VERSION="${API_VERSION#/}"
+          HEALTH_URL="http://localhost:${PORT}/${PREFIX}/${VERSION}/health-check"
+          echo "Checking ${HEALTH_URL}"
+          for i in {1..30}; do
+            STATUS_CODE=$(curl -s -o health-response.json -w "%{http_code}" "$HEALTH_URL" || true)
+            if [ "$STATUS_CODE" = "200" ] && grep -q '"status":"OK"' health-response.json; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed"
+          echo "Response:"
+          cat health-response.json || true
+          echo "App logs:"
+          cat app.log || true
+          exit 1
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" || true
+          fi
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+    name: Build and Deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      # Debug information
+      - name: Debug Info
+        run: |
+          echo "Current branch: ${{ github.ref }}"
+          echo "Event name: ${{ github.event_name }}"
+          echo "Docker image name: ${{ env.DOCKER_IMAGE_NAME }}"
+          echo "Commit SHA: ${{ github.sha }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=short,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Debug metadata output
+      - name: Debug Metadata
+        run: |
+          echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+          echo "Generated labels: ${{ steps.meta.outputs.labels }}"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+    #   - name: Deploy to Render
+    #     run: |
+    #       echo "Deploying to Render..."
+    #       response=$(curl -X POST \
+    #         -H "Accept: application/json" \
+    #         -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+    #         "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+    #         -w "%{http_code}")
+    #       echo "Render API response code: $response"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

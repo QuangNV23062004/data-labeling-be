@@ -6,6 +6,7 @@ import {
   NotImplementedException,
   Param,
   Patch,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -184,6 +185,31 @@ export class ReviewController {
       includeDeleted,
       request?.accountInfo,
     );
+  }
+
+  @Get('reviewer/stats')
+  @Roles(Role.REVIEWER, Role.ADMIN, Role.MANAGER)
+  @ApiOperation({
+    summary: 'Get reviewer aggregation stats by reviewer ID',
+  })
+  @ApiQuery({
+    name: 'reviewerId',
+    description: 'Reviewer account ID to aggregate',
+    required: true,
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Reviewer aggregation stats including approved/rejected counts, approval rate, and score impact',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async GetReviewerAggregationStats(
+    @Query('reviewerId', new ParseUUIDPipe({ version: '4' }))
+    reviewerId: string,
+  ) {
+    return this.reviewService.GetReviewerAggregationStats(reviewerId);
   }
 
   @Get(':id')

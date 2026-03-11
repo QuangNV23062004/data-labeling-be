@@ -176,4 +176,37 @@ export class LabelController {
     }
     return this.labelService.SoftDelete(id, req?.accountInfo);
   }
+
+  @ApiOperation({ summary: 'Get labels allowed in a project' })
+  @ApiQuery({
+    name: 'includeDeleted',
+    required: false,
+    type: Boolean,
+    description: 'Include soft-deleted labels',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of labels allowed in the project',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Project UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
+  @Get('projects/:id')
+  @ApiOperation({ summary: 'Get labels allowed in a project' })
+  async FindAllowedInProject(
+    @Param('id') projectId: string,
+    @Query() filter: FilterLabelQueryDto,
+    @Query('includeDeleted') includeDeleted: boolean = false,
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    return this.labelService.FindAllowedInProject(
+      projectId,
+      filter,
+      includeDeleted,
+      req?.accountInfo,
+    );
+  }
 }

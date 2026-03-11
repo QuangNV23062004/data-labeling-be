@@ -5,6 +5,7 @@ export enum ImageExtension {
   GIF = 'gif',
   SVG = 'svg',
   WEBP = 'webp',
+  AVIF = 'avif',
   BMP = 'bmp',
   TIFF = 'tiff',
 }
