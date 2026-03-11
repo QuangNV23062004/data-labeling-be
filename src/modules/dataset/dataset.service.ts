@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { basename } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ProjectSnapshotRepository } from '../project-snapshot/project-snapshot.repository';
 import { ProjectSnapshotEntity } from '../project-snapshot/project-snapshot.entity';
@@ -27,6 +28,45 @@ interface ExportCacheEntry {
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SNAPSHOT_FILES_TTL_MS = 30 * 60 * 1000;
+const DOWNLOAD_CONCURRENCY = 5;
+
+/**
+ * Runs `tasks` with at most `concurrency` in-flight at a time.
+ * Each task is a zero-arg async factory so it is only started when a slot opens.
+ * Settled results (fulfilled or rejected) are returned in input order.
+ */
+/**
+ * Returns the safe basename of a filename, stripping any path separators
+ * (both Unix and Windows) to prevent zip-slip attacks.
+ */
+function safeBasename(name: string): string {
+  // basename() strips directory components; replace any remaining separators
+  return basename(name).replace(/[\/\\]/g, '_') || 'file';
+}
+
+async function concurrentMap<T>(
+  concurrency: number,
+  tasks: (() => Promise<T>)[],
+): Promise<PromiseSettledResult<T>[]> {
+  const results: PromiseSettledResult<T>[] = new Array(tasks.length);
+  let next = 0;
+
+  async function worker(): Promise<void> {
+    while (next < tasks.length) {
+      const index = next++;
+      try {
+        results[index] = { status: 'fulfilled', value: await tasks[index]() };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, tasks.length) }, worker),
+  );
+  return results;
+}
 
 @Injectable()
 export class DatasetService {
@@ -142,10 +182,11 @@ export class DatasetService {
     const files: any[] = snapshot.snapshotData?.files ?? [];
     const fileCache = new Map<string, { name: string; buffer: Buffer }>();
 
-    await Promise.allSettled(
+    await concurrentMap(
+      DOWNLOAD_CONCURRENCY,
       files
         .filter((f) => f.url && (f.labels ?? []).length > 0)
-        .map(async (f) => {
+        .map((f) => async () => {
           try {
             const buffer = await this.storageService.DownloadBlobByUrl(f.url);
             fileCache.set(f.url, { name: f.name, buffer });
@@ -178,17 +219,37 @@ export class DatasetService {
       const zipEntries: { name: string; buffer: Buffer }[] = [
         { name: 'annotations.json', buffer: Buffer.from(json, 'utf-8') },
       ];
+      const usedNames = new Set<string>(['annotations.json']);
 
-      await Promise.allSettled(
+      const uniqueZipName = (base: string): string => {
+        if (!usedNames.has(base)) {
+          usedNames.add(base);
+          return base;
+        }
+        const dot = base.lastIndexOf('.');
+        const stem = dot !== -1 ? base.slice(0, dot) : base;
+        const ext = dot !== -1 ? base.slice(dot) : '';
+        let counter = 1;
+        let candidate: string;
+        do {
+          candidate = `${stem} (${counter++})${ext}`;
+        } while (usedNames.has(candidate));
+        usedNames.add(candidate);
+        return candidate;
+      };
+
+      await concurrentMap(
+        DOWNLOAD_CONCURRENCY,
         files
           .filter((file) => file.url && (file.labels ?? []).length > 0)
-          .map(async (file) => {
+          .map((file) => async () => {
             try {
               const cached = preDownloaded?.get(file.url);
               const buffer = cached
                 ? cached.buffer
                 : await this.storageService.DownloadBlobByUrl(file.url);
-              zipEntries.push({ name: `files/${file.name}`, buffer });
+              const entryName = uniqueZipName(`files/${safeBasename(file.name)}`);
+              zipEntries.push({ name: entryName, buffer });
             } catch {
               // skip files that fail to download
             }
