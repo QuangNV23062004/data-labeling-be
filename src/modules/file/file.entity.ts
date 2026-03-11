@@ -13,12 +13,14 @@ import { AccountEntity } from '../account/account.entity';
 import { ContentType } from './enums/content-type.enums';
 import { ProjectTaskEntity } from '../project-task/project-task.entity';
 import { FileLabelEntity } from '../file-label/file-label.entity';
+import { FileStatus } from './enums/file-status.enums';
 
 @Entity({ name: 'files' })
 @Index('idx_file_project_id', ['projectId'])
 @Index('idx_file_uploaded_by_id', ['uploadedById'])
 @Index('idx_file_annotator_id', ['annotatorId'])
 @Index('idx_file_reviewer_id', ['reviewerId'])
+@Index('idx_file_status', ['status'])
 export class FileEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid', nullable: false })
   projectId: string;
@@ -43,6 +45,15 @@ export class FileEntity extends BaseEntity {
 
   @Column({ name: 'file_url', type: 'varchar', nullable: false })
   fileUrl: string;
+
+  @Column({
+    name: 'status',
+    type: 'enum',
+    enum: FileStatus,
+    nullable: false,
+    default: FileStatus.IN_ANNOTATION,
+  })
+  status: FileStatus;
 
   @Column({ name: 'uploaded_by_id', type: 'uuid', nullable: false })
   uploadedById: string;

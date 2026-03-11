@@ -1,5 +1,7 @@
 import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum } from 'class-validator';
+import { FileStatus } from '../enums/file-status.enums';
 
 export class CreateFileDto {
   @ApiProperty({
@@ -26,4 +28,13 @@ export class CreateFileDto {
   @IsOptional()
   @IsUUID()
   reviewerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Current workflow status of the file',
+    example: FileStatus.IN_ANNOTATION,
+    enum: FileStatus,
+  })
+  @IsOptional()
+  @IsEnum(FileStatus)
+  status?: FileStatus;
 }

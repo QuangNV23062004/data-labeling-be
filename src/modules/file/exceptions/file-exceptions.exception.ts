@@ -117,3 +117,16 @@ export class StaffAssignedToFileInvalidRoleException extends BadRequestException
     );
   }
 }
+
+export class StaffAssignedToFileWithoutProjectTaskException extends BadRequestException {
+  constructor(
+    staffId: string,
+    role: 'annotator' | 'reviewer',
+    projectId: string,
+    fileId: string,
+  ) {
+    super(
+      `Staff member with ID "${staffId}" as ${role} must already have a task in project "${projectId}" before being assigned to file "${fileId}"`,
+    );
+  }
+}

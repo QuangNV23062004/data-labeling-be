@@ -5,11 +5,8 @@ export enum ContentType {
   GIF = 'image/gif',
   WEBP = 'image/webp',
   AVIF = 'image/avif',
-<<<<<<< HEAD
   BMP = 'image/bmp',
   TIFF = 'image/tiff',
-=======
->>>>>>> d1f583dc9acda887562e0a4b5bee99a13bc65f7e
   SVG = 'image/svg+xml',
 
   // Text

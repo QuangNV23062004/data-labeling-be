@@ -59,6 +59,7 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
     query: FilterProjectQueryDto,
     entityManager?: EntityManager,
   ): Promise<PaginationResultDto<ProjectEntity>> {
+    console.log(query);
     const repository = await this.GetRepository(entityManager);
 
     const page = query?.page || 1;
