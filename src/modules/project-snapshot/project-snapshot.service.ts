@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProjectRepository } from '../project/project.repository';
 import { ProjectNotFoundException } from '../project/exceptions/project-exceptions.exception';
 import { ProjectSnapshotRepository } from './project-snapshot.repository';
@@ -20,6 +21,7 @@ export class ProjectSnapshotService {
     private readonly snapshotRepository: ProjectSnapshotRepository,
     @InjectRepository(FileEntity)
     private readonly fileRepository: Repository<FileEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async CreateSnapshot(
@@ -47,13 +49,14 @@ export class ProjectSnapshotService {
         .filter(
           (fl) =>
             fl.deletedAt === null &&
-            fl.status === FileLabelStatusEnums.APPROVED ||
-            fl.status === FileLabelStatusEnums.DONE,
+            (fl.status === FileLabelStatusEnums.APPROVED ||
+              fl.status === FileLabelStatusEnums.DONE),
         )
         .map((fl) => ({
           id: fl.id,
           labelId: fl.labelId,
           labelName: fl.label?.name ?? null,
+          labelColor: fl.label?.color ?? null,
           annotationData: fl.annotationData ?? null,
         })),
     }));
@@ -67,7 +70,9 @@ export class ProjectSnapshotService {
     snapshot.totalFiles = files.length;
     snapshot.createdById = creatorId;
 
-    return this.snapshotRepository.Create(snapshot);
+    const created = await this.snapshotRepository.Create(snapshot);
+    this.eventEmitter.emit('snapshot.created', { snapshotId: created.id });
+    return created;
   }
 
   async GetPaginated(

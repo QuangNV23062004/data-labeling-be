@@ -9,7 +9,7 @@ import { PassThrough } from 'stream';
 export class StorageService {
   constructor(private typedConfigService: TypedConfigService) {}
 
-  private async createZip(
+  async CreateZip(
     files: { name: string; buffer: Buffer }[],
   ): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
@@ -108,7 +108,27 @@ export class StorageService {
     }
 
     // console.log(`Creating zip with ${files.length} files`);
-    return this.createZip(files);
+    return this.CreateZip(files);
+  }
+
+  async DownloadBlobByUrl(fileUrl: string): Promise<Buffer> {
+    const blobSasUrl = this.getBlobSasUrl();
+    const blobSasToken = this.getBlobSasToken();
+    const containerName = this.getBlobContainerName();
+
+    const url = `${blobSasUrl}?${blobSasToken}`;
+    const blobServiceClient = new BlobServiceClient(url);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    const blobPath = this.extractBlobPath(fileUrl);
+    const blobClient = containerClient.getBlobClient(blobPath);
+    const download = await blobClient.download();
+
+    let buffer = Buffer.alloc(0);
+    for await (const chunk of download.readableStreamBody!) {
+      buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
+    }
+    return buffer;
   }
 
   /**
