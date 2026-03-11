@@ -14,5 +14,6 @@ import { FileEntity } from '../file/file.entity';
   ],
   controllers: [ProjectSnapshotController],
   providers: [ProjectSnapshotService, ProjectSnapshotRepository],
+  exports: [ProjectSnapshotRepository],
 })
 export class ProjectSnapshotModule {}

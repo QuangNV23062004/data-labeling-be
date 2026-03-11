@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatasetController } from './dataset.controller';
 import { DatasetService } from './dataset.service';
-import { DatasetRepository } from './dataset.repository';
-import { DatasetEntity } from './dataset.entity';
+import { ProjectSnapshotModule } from '../project-snapshot/project-snapshot.module';
+import { StorageModule } from 'src/common/storage/storage.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DatasetEntity])],
+  imports: [ProjectSnapshotModule, StorageModule, AuthModule],
   controllers: [DatasetController],
-  providers: [DatasetService, DatasetRepository],
+  providers: [DatasetService],
 })
 export class DatasetModule {}
