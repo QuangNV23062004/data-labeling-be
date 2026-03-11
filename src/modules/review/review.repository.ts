@@ -5,6 +5,16 @@ import { EntityManager, In, Repository } from 'typeorm';
 import { ReviewEntity } from './review.entity';
 import { FilterReviewQueryDto } from './dtos/filter-review-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { Decision } from './enums/decisions.enums';
+
+export interface ReviewerAggregationStats {
+  reviewerId: string;
+  approved: number;
+  rejected: number;
+  totalReviewed: number;
+  approvalRate: number;
+  scoreImpact: number;
+}
 @Injectable()
 export class ReviewRepository extends BaseRepository<ReviewEntity> {
   constructor(
@@ -283,5 +293,65 @@ export class ReviewRepository extends BaseRepository<ReviewEntity> {
     }
 
     return qb.getOne();
+  }
+
+  async GetReviewerAggregationStats(
+    reviewerId: string,
+    em?: EntityManager,
+  ): Promise<ReviewerAggregationStats> {
+    const repository = await this.GetRepository(em);
+
+    const decisionRow = await repository
+      .createQueryBuilder('review')
+      .select(
+        `COALESCE(SUM(CASE WHEN review.decision = :approvedDecision THEN 1 ELSE 0 END), 0)`,
+        'approved',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN review.decision = :rejectedDecision THEN 1 ELSE 0 END), 0)`,
+        'rejected',
+      )
+      .where('review.reviewerId = :reviewerId', { reviewerId })
+      .andWhere('review.deletedAt IS NULL')
+      .setParameters({
+        approvedDecision: Decision.APPROVED,
+        rejectedDecision: Decision.REJECTED,
+      })
+      .getRawOne<{ approved: string; rejected: string }>();
+
+    const scoreImpactRow = await repository
+      .createQueryBuilder('review')
+      .leftJoin(
+        'review.reviewErrors',
+        'reviewError',
+        'reviewError.deletedAt IS NULL',
+      )
+      .leftJoin(
+        'reviewError.reviewErrorType',
+        'reviewErrorType',
+        'reviewErrorType.deletedAt IS NULL',
+      )
+      .select('COALESCE(SUM(reviewErrorType.scoreImpact), 0)', 'scoreImpact')
+      .where('review.reviewerId = :reviewerId', { reviewerId })
+      .andWhere('review.deletedAt IS NULL')
+      .getRawOne<{ scoreImpact: string }>();
+
+    const approved = Number(decisionRow?.approved ?? 0);
+    const rejected = Number(decisionRow?.rejected ?? 0);
+    const totalReviewed = approved + rejected;
+    const approvalRate =
+      totalReviewed > 0
+        ? Number(((approved / totalReviewed) * 100).toFixed(2))
+        : 0;
+    const scoreImpact = Number(scoreImpactRow?.scoreImpact ?? 0);
+
+    return {
+      reviewerId,
+      approved,
+      rejected,
+      totalReviewed,
+      approvalRate,
+      scoreImpact,
+    };
   }
 }

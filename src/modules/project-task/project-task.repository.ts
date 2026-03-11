@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository, IsNull } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { ProjectTaskEntity } from './project-task.entity';
 import { FilterProjectTaskQueryDto } from './dtos/filter-project-task-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
@@ -29,11 +29,19 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
     entityManager?: EntityManager,
   ): Promise<ProjectTaskEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    const whereCondition: any = { id: id };
+
+    const qb = repository
+      .createQueryBuilder('projectTask')
+      .leftJoinAndSelect('projectTask.project', 'project')
+      .where('projectTask.id = :id', { id });
+
     if (!includeDeleted) {
-      whereCondition.deletedAt = IsNull();
+      qb.andWhere('projectTask.deletedAt IS NULL').andWhere(
+        'project.deletedAt IS NULL',
+      );
     }
-    return repository.findOne({ where: whereCondition });
+
+    return qb.getOne();
   }
 
   async Delete(
@@ -42,7 +50,7 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
   ): Promise<ProjectTaskEntity | null> {
     const repository = await this.GetRepository(entityManager);
     const projectTask = await this.FindById(id, false, entityManager);
-    
+
     if (!projectTask) {
       return null;
     }
@@ -57,10 +65,14 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
     em?: EntityManager,
   ): Promise<PaginationResultDto<ProjectTaskEntity>> {
     const repository = await this.GetRepository(em);
-    const qb = repository.createQueryBuilder('projectTask');
+    const qb = repository
+      .createQueryBuilder('projectTask')
+      .leftJoinAndSelect('projectTask.project', 'project');
 
     if (!includeDeleted) {
-      qb.andWhere('projectTask.deletedAt IS NULL');
+      qb.andWhere('projectTask.deletedAt IS NULL').andWhere(
+        'project.deletedAt IS NULL',
+      );
     }
 
     // Apply filters
