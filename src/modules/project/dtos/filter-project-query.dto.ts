@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsNumber, Min, IsIn } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 
@@ -29,6 +29,21 @@ export class FilterProjectQueryDto extends BasePaginationQueryDto {
 
   @ApiPropertyOptional({ description: 'Include Deleted' })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return false;
+    }
+
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+
+    return Boolean(value);
+  })
   includeDeleted?: boolean = false;
+
+  @ApiPropertyOptional({ description: 'Filter by created by id' })
+  @IsOptional()
+  @IsString()
+  createdById?: string;
 }

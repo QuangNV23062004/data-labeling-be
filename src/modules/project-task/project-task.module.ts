@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectTaskController } from './project-task.controller';
 import { ProjectTaskService } from './project-task.service';
@@ -11,11 +11,12 @@ import { FileModule } from '../file/file.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProjectTaskEntity]),
-    ProjectModule,
+    forwardRef(() => ProjectModule),
     AccountModule,
     FileModule,
   ],
   controllers: [ProjectTaskController],
   providers: [ProjectTaskService, ProjectTaskRepository],
+  exports: [ProjectTaskService, ProjectTaskRepository],
 })
 export class ProjectTaskModule {}

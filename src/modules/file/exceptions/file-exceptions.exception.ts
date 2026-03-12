@@ -76,6 +76,14 @@ export class CanOnlyUploadFilesToDraftProjectsException extends BadRequestExcept
   }
 }
 
+export class OnlyStatusUpdateAllowedForRoleException extends BadRequestException {
+  constructor(role: string) {
+    super(
+      `Role "${role}" is only allowed to update the status field of a file`,
+    );
+  }
+}
+
 export class UnknownFileFormatException extends BadRequestException {
   constructor(format: string) {
     super(`Unknown file format: ${format}`);

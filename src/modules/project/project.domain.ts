@@ -103,7 +103,7 @@ export class ProjectDomain {
       const errorCount = Number(m.errorCount ?? 0);
 
       const saved = savedByAccount.get(m.annotatorId)!;
-      const prev = existingByAccount.get(m.annotatorId)?.ratingScore ?? 0;
+      const prev = existingByAccount.get(m.annotatorId)?.ratingScore ?? 100;
 
       const h = new AccountRatingHistoryEntity();
       h.accountRatingId = saved.id;

@@ -3,6 +3,7 @@ import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager } from 'typeorm';
 import { ProjectConfigurationEntity } from './project-configuration.entity';
+import { LabelEntity } from '../label/label.entity';
 @Injectable()
 export class ProjectConfigurationRepository extends BaseRepository<ProjectConfigurationEntity> {
   constructor(
@@ -12,7 +13,9 @@ export class ProjectConfigurationRepository extends BaseRepository<ProjectConfig
     super(repository, ProjectConfigurationEntity);
   }
 
-  async Create(entity: ProjectConfigurationEntity): Promise<ProjectConfigurationEntity> {
+  async Create(
+    entity: ProjectConfigurationEntity,
+  ): Promise<ProjectConfigurationEntity> {
     return this.repository.save(entity);
   }
 
@@ -22,11 +25,25 @@ export class ProjectConfigurationRepository extends BaseRepository<ProjectConfig
     entityManager?: EntityManager,
   ): Promise<ProjectConfigurationEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    const whereCondition: any = { id };
-    if (!includeDeleted) {
-      whereCondition.deletedAt = null;
+    const result = await repository
+      .createQueryBuilder('config')
+      .where('config.id = :id', { id })
+      .andWhere(includeDeleted ? '1=1' : 'config.deletedAt IS NULL')
+      .getOne();
+
+    if (!result) {
+      return null;
     }
-    return repository.findOne({ where: whereCondition });
+
+    // single join query for labels
+    const labels = await repository.manager
+      .createQueryBuilder(LabelEntity, 'label')
+      .where('label.id = ANY(:ids::uuid[])', {
+        ids: result?.availableLabelIds || [],
+      })
+      .getMany();
+    result.availableLabels = labels;
+    return result as ProjectConfigurationEntity | null;
   }
 
   async FindByProjectId(
@@ -35,11 +52,25 @@ export class ProjectConfigurationRepository extends BaseRepository<ProjectConfig
     entityManager?: EntityManager,
   ): Promise<ProjectConfigurationEntity | null> {
     const repository = await this.GetRepository(entityManager);
-    const whereCondition: any = { projectId };
-    if (!includeDeleted) {
-      whereCondition.deletedAt = null;
+    const result = await repository
+      .createQueryBuilder('config')
+      .where('config.projectId = :projectId', { projectId })
+      .andWhere('config.deletedAt IS NULL')
+      .getOne();
+
+    if (!result) {
+      return null;
     }
-    return repository.findOne({ where: whereCondition });
+    // single join query for labels
+    const labels = await repository.manager
+      .createQueryBuilder(LabelEntity, 'label')
+      .where('label.id = ANY(:ids::uuid[])', {
+        ids: result?.availableLabelIds || [],
+      })
+      .getMany();
+
+    result.availableLabels = labels;
+    return result as ProjectConfigurationEntity | null;
   }
 
   async Update(

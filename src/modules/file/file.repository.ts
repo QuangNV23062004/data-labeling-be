@@ -354,9 +354,9 @@ export class FileRepository extends BaseRepository<FileEntity> {
 
     qb.where('file.projectId = :projectId', { projectId });
 
-    if (role === 'annotatorId') {
+    if (role === 'annotator') {
       qb.andWhere('file.annotatorId IS NULL');
-    } else if (role === 'reviewerId') {
+    } else if (role === 'reviewer') {
       qb.andWhere('file.reviewerId IS NULL');
     }
 

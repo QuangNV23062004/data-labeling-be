@@ -14,6 +14,7 @@ import {
   CanOnlyUploadFilesToDraftProjectsException,
   FileNotFoundException,
   FileTypeNotSupportedException,
+  OnlyStatusUpdateAllowedForRoleException,
   ProjectTypeFileTypeMismatchException,
   StaffAssignedToFileInvalidRoleException,
   StaffAssignedToFileNotFoundException,
@@ -179,6 +180,18 @@ export class FileService extends BaseService {
     file?: Express.Multer.File,
     accountInfo?: AccountInfo,
   ): Promise<FileEntity> {
+    const restrictedRoles: string[] = [Role.ANNOTATOR, Role.REVIEWER];
+    const callerRole = accountInfo?.role;
+
+    if (callerRole && restrictedRoles.includes(callerRole)) {
+      if (data.status === undefined) {
+        throw new OnlyStatusUpdateAllowedForRoleException(callerRole);
+      }
+      // Strip everything except status — these roles may NOT touch metadata,
+      // assignments, or the physical file.
+      data = { status: data.status };
+      file = undefined;
+    }
     const em = await this.repository.GetEntityManager();
     let oldFile;
     const transactionResult = await em.transaction(

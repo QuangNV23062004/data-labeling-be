@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository, IsNull, Like } from 'typeorm';
+import { EntityManager, Repository, IsNull } from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
@@ -59,7 +59,6 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
     query: FilterProjectQueryDto,
     entityManager?: EntityManager,
   ): Promise<PaginationResultDto<ProjectEntity>> {
-    console.log(query);
     const repository = await this.GetRepository(entityManager);
 
     const page = query?.page || 1;
@@ -70,6 +69,14 @@ export class ProjectRepository extends BaseRepository<ProjectEntity> {
 
     if (query?.includeDeleted) {
       qb.andWhere('project.deletedAt IS NOT NULL');
+    } else {
+      qb.andWhere('project.deletedAt IS NULL');
+    }
+
+    if (query?.createdById) {
+      qb.andWhere('project.createdById = :createdById', {
+        createdById: query.createdById,
+      });
     }
 
     //old filter

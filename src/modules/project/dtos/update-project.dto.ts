@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { DataType } from '../enums/data-type.enums';
+import { Transform } from 'class-transformer';
 
 export class UpdateProjectDto {
   @IsOptional()
@@ -16,6 +17,9 @@ export class UpdateProjectDto {
   description?: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
   @IsEnum(DataType)
   @ApiPropertyOptional({
     description: 'Data type of the project',
