@@ -6,8 +6,8 @@ export class UpdateProjectInstructionDto {
   @IsNotEmpty()
   @IsString()
   title: string;
-  
-  @IsNotEmpty()
-  @IsString()
-  content: string;
+
+  // @IsNotEmpty()
+  // @IsString()
+  // content: string;
 }
