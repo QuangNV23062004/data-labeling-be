@@ -5,6 +5,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { ProjectTaskEntity } from './project-task.entity';
 import { FilterProjectTaskQueryDto } from './dtos/filter-project-task-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
+import { ProjectTaskStatus } from './enums/task-status.enums';
 
 @Injectable()
 export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
@@ -84,6 +85,10 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
 
     if (query?.status) {
       qb.andWhere('projectTask.status = :status', { status: query.status });
+    } else {
+      qb.andWhere('projectTask.status <> :doneStatus', {
+        doneStatus: ProjectTaskStatus.DONE,
+      });
     }
 
     if (query?.assignedByUserId) {
@@ -134,5 +139,26 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
         assignedToUserId: query?.assignedToUserId,
       },
     );
+  }
+
+  async MarkAllAsDoneByProjectId(
+    projectId: string,
+    entityManager?: EntityManager,
+  ): Promise<void> {
+    const repository = await this.GetRepository(entityManager);
+
+    await repository
+      .createQueryBuilder()
+      .update(ProjectTaskEntity)
+      .set({
+        status: ProjectTaskStatus.DONE,
+        completedAt: new Date(),
+      })
+      .where('projectId = :projectId', { projectId })
+      .andWhere('deletedAt IS NULL')
+      .andWhere('status <> :doneStatus', {
+        doneStatus: ProjectTaskStatus.DONE,
+      })
+      .execute();
   }
 }

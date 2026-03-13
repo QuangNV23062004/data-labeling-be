@@ -12,6 +12,7 @@ import { AccountRatingModule } from '../account-rating/account-rating.module';
 import { AccountRatingHistoryModule } from '../account-rating-history/account-rating-history.module';
 import { AccountModule } from '../account/account.module';
 import { ProjectDomain } from './project.domain';
+import { ProjectTaskModule } from '../project-task/project-task.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProjectDomain } from './project.domain';
     AccountModule,
     AccountRatingModule,
     AccountRatingHistoryModule,
+    forwardRef(() => ProjectTaskModule),
   ],
   controllers: [ProjectController],
   providers: [ProjectService, ProjectRepository, ProjectDomain],

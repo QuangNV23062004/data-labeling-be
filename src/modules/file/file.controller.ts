@@ -103,7 +103,7 @@ export class FileController {
     return this.fileService.Create(file, createFileDto, request?.accountInfo);
   }
 
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
   @Patch(`:id`)
   @UseInterceptors(
     FileInterceptor('file', {

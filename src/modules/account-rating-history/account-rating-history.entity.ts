@@ -8,7 +8,9 @@ export class AccountRatingHistoryEntity extends BaseEntity {
   @Column({ name: 'account_rating_id', type: 'uuid', nullable: false })
   accountRatingId: string;
 
-  @ManyToOne(() => AccountRatingEntity, (rating) => rating.id)
+  @ManyToOne(() => AccountRatingEntity, (rating) => rating.history, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'account_rating_id' })
   accountRating: AccountRatingEntity;
 

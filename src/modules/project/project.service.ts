@@ -27,6 +27,7 @@ import { AccountRatingHistoryEntity } from '../account-rating-history/account-ra
 import { ProjectDomain } from './project.domain';
 import { AnnotatorBreakdownItem } from 'src/types/annotator-breakdown-items.types';
 import { CompleteProjectDto } from './dtos/complete-project.dto';
+import { ProjectTaskRepository } from '../project-task/project-task.repository';
 
 @Injectable()
 export class ProjectService extends BaseService {
@@ -38,6 +39,7 @@ export class ProjectService extends BaseService {
     private readonly reviewErrorRepository: ReviewErrorRepository,
     private readonly accountRatingRepository: AccountRatingRepository,
     private readonly accountRatingHistoryRepository: AccountRatingHistoryRepository,
+    private readonly projectTaskRepository: ProjectTaskRepository,
     private readonly projectDomain: ProjectDomain,
   ) {
     super();
@@ -215,6 +217,11 @@ export class ProjectService extends BaseService {
       project!.projectStatus = ProjectStatus.COMPLETED;
       const updatedProject = await this.projectRepository.Update(
         project!,
+        transactionalEntityManager,
+      );
+
+      await this.projectTaskRepository.MarkAllAsDoneByProjectId(
+        id,
         transactionalEntityManager,
       );
 

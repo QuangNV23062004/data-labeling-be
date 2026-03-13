@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,6 +13,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -57,8 +59,22 @@ export class ProjectController {
     @Request() req: IAuthenticatedRequest,
   ): Promise<ProjectEntity> {
     let userId = req.accountInfo?.sub;
+
+    // Manually map FormData fields to DTO since FileInterceptor doesn't auto-populate @Body()
+    const mappedDto = plainToInstance(
+      CreateProjectDto,
+      {
+        name: (req.body as any)?.name || dto.name,
+        description: (req.body as any)?.description || dto.description,
+        dataType: (req.body as any)?.dataType || dto.dataType,
+        availableLabelIds:
+          (req.body as any)?.availableLabelIds || dto.availableLabelIds,
+      },
+      { excludeExtraneousValues: false },
+    );
+
     //TODO: handle image upload later
-    return await this.projectService.Create(dto, userId!, image);
+    return await this.projectService.Create(mappedDto, userId!, image);
   }
 
   @ApiOperation({ summary: 'Update Project' })
@@ -78,8 +94,20 @@ export class ProjectController {
     @Param('id') id: string,
     @Body() dto: UpdateProjectDto,
     @UploadedFile() image?: Express.Multer.File,
+    @Request() req?: IAuthenticatedRequest,
   ): Promise<ProjectEntity> {
-    return await this.projectService.Update(id, dto, image);
+    // Manually map FormData fields to DTO since FileInterceptor doesn't auto-populate @Body()
+    const mappedDto = plainToInstance(
+      UpdateProjectDto,
+      {
+        name: (req?.body as any)?.name || dto.name,
+        description: (req?.body as any)?.description || dto.description,
+        dataType: (req?.body as any)?.dataType || dto.dataType,
+      },
+      { excludeExtraneousValues: false },
+    );
+
+    return await this.projectService.Update(id, mappedDto, image);
   }
 
   @ApiOperation({ summary: 'Delete Project' })
