@@ -126,12 +126,6 @@ export class NotificationGateway
       if (type === 'Bearer' && token) return token;
     }
 
-    const cookieHeader = client.handshake.headers?.cookie;
-    if (cookieHeader) {
-      const match = cookieHeader.match(/(?:^|;\s*)AccessToken=([^;]+)/);
-      if (match) return decodeURIComponent(match[1]);
-    }
-
     return undefined;
   }
 }

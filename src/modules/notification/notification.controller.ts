@@ -1,5 +1,11 @@
-import { Body, Controller, Patch, Post, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpCode, Patch, Post, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IAuthenticatedRequest } from 'src/interfaces/request';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dtos/create-notification.dto';
@@ -11,20 +17,35 @@ import { MarkNotificationsReadDto } from './dtos/mark-notifications-read.dto';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @ApiOperation({ summary: 'Send a notification to a user (test)' })
+  @ApiOperation({
+    summary: 'Send a test notification',
+    description:
+      'Creates a notification for the specified account and immediately fires it over WebSocket. Intended for development/testing.',
+  })
   @ApiBody({ type: CreateNotificationDto })
-  @ApiResponse({ status: 201, description: 'Notification sent' })
-  @ApiResponse({ status: 404, description: 'Target account not found' })
+  @ApiResponse({ status: 201, description: 'Notification created and fired to the target user.' })
+  @ApiResponse({ status: 400, description: 'Validation failed — check required fields and UUID formats.' })
+  @ApiResponse({ status: 404, description: 'Target account not found.' })
   @Post('test-send')
   async TestSend(@Body() dto: CreateNotificationDto) {
     return this.notificationService.Create(dto);
   }
 
-  @ApiOperation({ summary: 'Mark multiple notifications as read' })
+  @ApiOperation({
+    summary: 'Mark selected notifications as read',
+    description:
+      'Marks the provided notification IDs as read for the currently authenticated user. ' +
+      'IDs that do not exist or belong to another user are silently ignored.',
+  })
   @ApiBody({ type: MarkNotificationsReadDto })
-  @ApiResponse({ status: 200, description: 'Number of notifications marked as read' })
-  @ApiResponse({ status: 400, description: 'notificationIds must be a non-empty array' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the number of notifications that were updated.',
+    schema: { example: { updated: 3 } },
+  })
+  @ApiResponse({ status: 400, description: 'notificationIds must be a non-empty array of UUIDs.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @HttpCode(200)
   @Patch('read')
   async MarkManyAsRead(
     @Body() dto: MarkNotificationsReadDto,
@@ -34,9 +55,17 @@ export class NotificationController {
     return this.notificationService.MarkManyAsRead(dto, req.accountInfo.sub);
   }
 
-  @ApiOperation({ summary: 'Mark all notifications as read' })
-  @ApiResponse({ status: 200, description: 'Number of notifications marked as read' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({
+    summary: 'Mark all notifications as read',
+    description: 'Marks every unread notification belonging to the authenticated user as read.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the number of notifications that were updated.',
+    schema: { example: { updated: 12 } },
+  })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @HttpCode(200)
   @Patch('read-all')
   async MarkAllAsRead(@Req() req: IAuthenticatedRequest) {
     if (!req.accountInfo?.sub) throw new UnauthorizedException();

@@ -30,10 +30,8 @@ export class NotificationService extends BaseService {
 
       const entity = Object.assign(new NotificationEntity(), {
         accountId: dto.accountId,
-        notificationType: dto.notificationType,
         title: dto.title,
         content: dto.content,
-        relatedEntityId: dto.relatedEntityId ?? null,
         additionalData: dto.additionalData ?? null,
       });
 
