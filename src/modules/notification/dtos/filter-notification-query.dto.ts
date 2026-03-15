@@ -1,20 +1,36 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 
-export class FilterNotificationQueryDto {
+const booleanTransform = ({ value }: { value: unknown }): boolean => {
+  if (value === undefined || value === null || value === '') return false;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
+  return Boolean(value);
+};
+
+export class FilterNotificationQueryDto extends BasePaginationQueryDto {
+  accountId?: string;
+
+  @ApiPropertyOptional({ description: 'Return only unread notifications', default: false })
+  @IsOptional()
+  @Transform(booleanTransform)
+  @IsBoolean()
+  unreadOnly?: boolean = false;
+
+  @ApiPropertyOptional({ description: 'Include soft-deleted notifications', default: false })
+  @IsOptional()
+  @Transform(booleanTransform)
+  @IsBoolean()
+  includeDeleted?: boolean = false;
+
+  @ApiPropertyOptional({
+    description: 'Field to sort by',
+    default: 'createdAt',
+    enum: ['createdAt', 'updatedAt', 'title'],
+  })
   @IsOptional()
   @IsString()
-  search?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  @IsIn(['createdAt', 'updatedAt', 'title'])
+  orderBy?: string = 'createdAt';
 }
