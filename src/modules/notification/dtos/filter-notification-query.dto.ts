@@ -1,20 +1,20 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { BasePaginationQueryDto } from 'src/common/pagination/base-pagination.dto';
 
-export class FilterNotificationQueryDto {
+export class FilterNotificationQueryDto extends BasePaginationQueryDto {
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  unreadOnly?: boolean = false;
+
+  @IsOptional()
+  @IsBoolean()
+  includeDeleted?: boolean = false;
+
   @IsOptional()
   @IsString()
-  search?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  limit?: number = 10;
+  orderBy?: string;
 }

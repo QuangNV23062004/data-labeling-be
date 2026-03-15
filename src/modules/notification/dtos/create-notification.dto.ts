@@ -1,9 +1,26 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { NotificationType } from '../enums/notification-types.enums';
 
 export class CreateNotificationDto {
+  @IsUUID()
   @IsNotEmpty()
-  @IsString()
-  name: string;
+  accountId: string;
 
-  // Add your properties here
+  @IsEnum(NotificationType)
+  notificationType: NotificationType;
+
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @IsOptional()
+  @IsUUID()
+  relatedEntityId?: string | null;
+
+  @IsOptional()
+  additionalData?: Record<string, any> | null;
 }
