@@ -1,14 +1,16 @@
-import { Body, Controller, Delete, HttpCode, Patch, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { IAuthenticatedRequest } from 'src/interfaces/request';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dtos/create-notification.dto';
+import { FilterNotificationQueryDto } from './dtos/filter-notification-query.dto';
 import { MarkNotificationsReadDto } from './dtos/mark-notifications-read.dto';
 import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 
@@ -17,6 +19,27 @@ import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
+
+  @ApiOperation({
+    summary: 'Get paginated notifications',
+    description: 'Returns a paginated list of notifications for the authenticated user. Supports filtering by read status.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['ASC', 'DESC'], description: 'Sort direction (default: DESC)' })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ['createdAt', 'updatedAt', 'title'], description: 'Sort field (default: createdAt)' })
+  @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean, description: 'Return only unread notifications' })
+  @ApiResponse({ status: 200, description: 'Paginated list of notifications.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @Get()
+  async FindPaginated(
+    @Query() query: FilterNotificationQueryDto,
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    if (!req.accountInfo?.sub) throw new UnauthorizedException();
+    query.accountId = req.accountInfo.sub;
+    return this.notificationService.FindPaginated(query);
+  }
 
   @ApiOperation({
     summary: 'Send a test notification',

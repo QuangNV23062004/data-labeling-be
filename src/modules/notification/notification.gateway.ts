@@ -113,6 +113,14 @@ export class NotificationGateway
     this.server.to(`account:${accountId}`).emit('notification.read', { notificationIds });
   }
 
+  /**
+   * Notifies all sockets of the account that notifications were deleted.
+   * Pass null for notificationIds to signal that all notifications were deleted.
+   */
+  fireDeletedToAccount(accountId: string, notificationIds: string[] | null): void {
+    this.server.to(`account:${accountId}`).emit('notification.deleted', { notificationIds });
+  }
+
   getConnectedSocketCount(accountId: string): number {
     return this.accountSockets.get(accountId)?.size ?? 0;
   }

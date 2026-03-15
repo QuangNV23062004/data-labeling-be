@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
 import { BaseService } from 'src/common/service/base.service';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { AccountRepository } from '../account/account.repository';
@@ -45,47 +44,8 @@ export class NotificationService extends BaseService {
 
   async FindPaginated(
     query: FilterNotificationQueryDto,
-    em?: EntityManager,
   ): Promise<PaginationResultDto<NotificationEntity>> {
-    const repository = await this.notificationRepository.GetRepository(em);
-    const page = query?.page ?? 1;
-    const limit = query?.limit ?? 10;
-    const offset = (page - 1) * limit;
-    const order = (query?.order?.toUpperCase() ?? 'DESC') as 'ASC' | 'DESC';
-    const orderBy = query?.orderBy ?? 'createdAt';
-
-    const qb = repository.createQueryBuilder('notification');
-
-    if (!query?.includeDeleted) {
-      qb.andWhere('notification.deletedAt IS NULL');
-    }
-
-    if (query?.accountId) {
-      qb.andWhere('notification.accountId = :accountId', { accountId: query.accountId });
-    }
-
-    if (query?.unreadOnly) {
-      qb.andWhere('notification.isRead = false');
-    }
-
-    qb.orderBy(`notification.${orderBy}`, order);
-
-    const totalItems = await qb.getCount();
-    const totalPages = Math.ceil(totalItems / limit);
-    const items = await qb.skip(offset).take(limit).getMany();
-
-    return new PaginationResultDto<NotificationEntity>(
-      items,
-      totalPages,
-      page,
-      limit,
-      '',
-      '',
-      order,
-      orderBy,
-      page < totalPages,
-      page > 1,
-    );
+    return this.notificationRepository.findPaginated(query);
   }
 
   async MarkManyAsRead(dto: MarkNotificationsReadDto, accountId: string): Promise<{ updated: number }> {
@@ -105,11 +65,13 @@ export class NotificationService extends BaseService {
 
   async DeleteMany(dto: DeleteNotificationsDto, accountId: string): Promise<{ deleted: number }> {
     const deleted = await this.notificationRepository.deleteMany(dto.notificationIds, accountId);
+    this.notificationGateway.fireDeletedToAccount(accountId, dto.notificationIds);
     return { deleted };
   }
 
   async DeleteAll(accountId: string): Promise<{ deleted: number }> {
     const deleted = await this.notificationRepository.deleteAll(accountId);
+    this.notificationGateway.fireDeletedToAccount(accountId, null);
     return { deleted };
   }
 }
