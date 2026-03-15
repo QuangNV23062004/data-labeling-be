@@ -6,6 +6,7 @@ import { ProjectTaskEntity } from './project-task.entity';
 import { FilterProjectTaskQueryDto } from './dtos/filter-project-task-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { ProjectTaskStatus } from './enums/task-status.enums';
+import { Role } from '../account/enums/role.enum';
 
 @Injectable()
 export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
@@ -16,6 +17,13 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
     super(repository, ProjectTaskEntity);
   }
 
+  async Update(
+    projectTask: ProjectTaskEntity,
+    entityManager?: EntityManager,
+  ): Promise<ProjectTaskEntity> {
+    const repository = await this.GetRepository(entityManager);
+    return repository.save(projectTask);
+  }
   async Create(
     projectTask: ProjectTaskEntity,
     entityManager?: EntityManager,
@@ -45,6 +53,42 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
     return qb.getOne();
   }
 
+  async FindLatestByProjectAssigneeAndRole(
+    projectId: string,
+    assignedTo: string,
+    assignedUserRole: Role.ANNOTATOR | Role.REVIEWER,
+    includeDeleted: boolean = false,
+    includeDone: boolean = false,
+    entityManager?: EntityManager,
+  ): Promise<ProjectTaskEntity | null> {
+    const repository = await this.GetRepository(entityManager);
+
+    const qb = repository
+      .createQueryBuilder('projectTask')
+      .where('projectTask.projectId = :projectId', { projectId })
+      .andWhere('projectTask.assignedTo = :assignedTo', { assignedTo })
+      .andWhere('projectTask.assignedUserRole = :assignedUserRole', {
+        assignedUserRole,
+      });
+
+    if (!includeDeleted) {
+      qb.andWhere('projectTask.deletedAt IS NULL');
+    }
+
+    if (!includeDone) {
+      qb.andWhere('projectTask.status <> :doneStatus', {
+        doneStatus: ProjectTaskStatus.DONE,
+      });
+    }
+
+    qb.orderBy('projectTask.updatedAt', 'DESC').addOrderBy(
+      'projectTask.createdAt',
+      'DESC',
+    );
+
+    return qb.getOne();
+  }
+
   async Delete(
     id: string,
     entityManager?: EntityManager,
@@ -63,12 +107,13 @@ export class ProjectTaskRepository extends BaseRepository<ProjectTaskEntity> {
   async FindPaginated(
     query: FilterProjectTaskQueryDto,
     includeDeleted: boolean = false,
+    includeDone: boolean = false,
     em?: EntityManager,
   ): Promise<PaginationResultDto<ProjectTaskEntity>> {
     const repository = await this.GetRepository(em);
     const qb = repository
       .createQueryBuilder('projectTask')
-      .leftJoinAndSelect('projectTask.project', 'project');
+      .innerJoinAndSelect('projectTask.project', 'project');
 
     if (!includeDeleted) {
       qb.andWhere('projectTask.deletedAt IS NULL').andWhere(

@@ -355,7 +355,13 @@ export class FileService extends BaseService {
         }
 
         Object.assign(entity, data);
-        // console.log(entity);
+        // Persist scalar fields only; loaded relations can cause noisy/fragile save behavior.
+        delete (entity as Partial<FileEntity>).project;
+        delete (entity as Partial<FileEntity>).uploadedBy;
+        delete (entity as Partial<FileEntity>).annotator;
+        delete (entity as Partial<FileEntity>).reviewer;
+        delete (entity as Partial<FileEntity>).fileLabels;
+
         const result = await this.repository.Update(
           entity,
           transactionalEntityManager,
@@ -563,20 +569,24 @@ export class FileService extends BaseService {
         role,
       );
 
+      const previousTaskFileIds = previousTask?.fileIds ?? [];
+
       if (
         previousTask &&
         (!nextTask || previousTask.id !== nextTask.id) &&
-        previousTask.fileIds.includes(fileId)
+        previousTaskFileIds.includes(fileId)
       ) {
-        previousTask.fileIds = previousTask.fileIds.filter(
+        previousTask.fileIds = previousTaskFileIds.filter(
           (existingId) => existingId !== fileId,
         );
         await taskRepository.save(previousTask);
       }
     }
 
-    if (nextTask && !nextTask.fileIds.includes(fileId)) {
-      nextTask.fileIds = [...nextTask.fileIds, fileId];
+    const nextTaskFileIds = nextTask?.fileIds ?? [];
+
+    if (nextTask && !nextTaskFileIds.includes(fileId)) {
+      nextTask.fileIds = [...nextTaskFileIds, fileId];
       await taskRepository.save(nextTask);
     }
   }

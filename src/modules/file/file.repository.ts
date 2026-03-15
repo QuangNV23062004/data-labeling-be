@@ -84,6 +84,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL AND annotator.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL AND reviewer.deletedAt IS NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -94,6 +104,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -174,6 +194,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL AND annotator.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL AND reviewer.deletedAt IS NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -184,6 +214,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -237,6 +277,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL AND annotator.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL AND reviewer.deletedAt IS NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -247,6 +297,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL',
+      );
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
@@ -284,6 +344,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
         'uploadedBy',
         'uploadedBy.deletedAt IS NULL',
       );
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL AND annotator.deletedAt IS NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL AND reviewer.deletedAt IS NULL',
+      );
 
       qb.leftJoinAndSelect(
         'file.fileLabels',
@@ -294,6 +364,16 @@ export class FileRepository extends BaseRepository<FileEntity> {
     } else {
       qb.leftJoinAndSelect('file.project', 'project');
       qb.leftJoinAndSelect('file.uploadedBy', 'uploadedBy');
+      qb.leftJoinAndSelect(
+        'file.annotator',
+        'annotator',
+        'file.annotatorId IS NOT NULL',
+      );
+      qb.leftJoinAndSelect(
+        'file.reviewer',
+        'reviewer',
+        'file.reviewerId IS NOT NULL',
+      );
       qb.leftJoinAndSelect(
         'file.fileLabels',
         'fileLabels',
