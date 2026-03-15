@@ -25,7 +25,7 @@ export class NotificationService extends BaseService {
     const em = await this.notificationRepository.GetEntityManager();
 
     const saved = await em.transaction(async (tx) => {
-      const account = await this.accountRepository.FindById(dto.accountId, false);
+      const account = await this.accountRepository.FindById(dto.accountId, false, tx);
       if (!account) throw new AccountNotFoundException();
 
       const entity = Object.assign(new NotificationEntity(), {
@@ -35,7 +35,7 @@ export class NotificationService extends BaseService {
         additionalData: dto.additionalData ?? null,
       });
 
-      return this.notificationRepository.create(entity, tx);
+      return this.notificationRepository.Create(entity, tx);
     });
 
     this.notificationGateway.fireNotificationToAccount(dto.accountId, saved);
@@ -45,32 +45,32 @@ export class NotificationService extends BaseService {
   async FindPaginated(
     query: FilterNotificationQueryDto,
   ): Promise<PaginationResultDto<NotificationEntity>> {
-    return this.notificationRepository.findPaginated(query);
+    return this.notificationRepository.FindPaginated(query);
   }
 
   async MarkManyAsRead(dto: MarkNotificationsReadDto, accountId: string): Promise<{ updated: number }> {
-    const updated = await this.notificationRepository.markManyAsRead(dto.notificationIds, accountId);
-    const unreadCount = await this.notificationRepository.countUnread(accountId);
+    const updated = await this.notificationRepository.MarkManyAsRead(dto.notificationIds, accountId);
+    const unreadCount = await this.notificationRepository.CountUnread(accountId);
     this.notificationGateway.fireReadStatusToAccount(accountId, dto.notificationIds);
     this.notificationGateway.fireUnreadCountToAccount(accountId, unreadCount);
     return { updated };
   }
 
   async MarkAllAsRead(accountId: string): Promise<{ updated: number }> {
-    const updated = await this.notificationRepository.markAllAsRead(accountId);
+    const updated = await this.notificationRepository.MarkAllAsRead(accountId);
     this.notificationGateway.fireReadStatusToAccount(accountId, null);
     this.notificationGateway.fireUnreadCountToAccount(accountId, 0);
     return { updated };
   }
 
   async DeleteMany(dto: DeleteNotificationsDto, accountId: string): Promise<{ deleted: number }> {
-    const deleted = await this.notificationRepository.deleteMany(dto.notificationIds, accountId);
+    const deleted = await this.notificationRepository.DeleteMany(dto.notificationIds, accountId);
     this.notificationGateway.fireDeletedToAccount(accountId, dto.notificationIds);
     return { deleted };
   }
 
   async DeleteAll(accountId: string): Promise<{ deleted: number }> {
-    const deleted = await this.notificationRepository.deleteAll(accountId);
+    const deleted = await this.notificationRepository.DeleteAll(accountId);
     this.notificationGateway.fireDeletedToAccount(accountId, null);
     return { deleted };
   }

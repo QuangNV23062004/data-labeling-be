@@ -15,11 +15,11 @@ export class NotificationRepository extends BaseRepository<NotificationEntity> {
     super(repository, NotificationEntity);
   }
 
-  async create(entity: NotificationEntity, em?: EntityManager): Promise<NotificationEntity> {
+  async Create(entity: NotificationEntity, em?: EntityManager): Promise<NotificationEntity> {
     return em ? em.save(entity) : this.repository.save(entity);
   }
 
-  async markManyAsRead(ids: string[], accountId: string): Promise<number> {
+  async MarkManyAsRead(ids: string[], accountId: string): Promise<number> {
     const result = await this.repository.update(
       { id: In(ids), accountId, isRead: false },
       { isRead: true },
@@ -27,7 +27,7 @@ export class NotificationRepository extends BaseRepository<NotificationEntity> {
     return result.affected ?? 0;
   }
 
-  async markAllAsRead(accountId: string): Promise<number> {
+  async MarkAllAsRead(accountId: string): Promise<number> {
     const result = await this.repository.update(
       { accountId, isRead: false },
       { isRead: true },
@@ -35,21 +35,21 @@ export class NotificationRepository extends BaseRepository<NotificationEntity> {
     return result.affected ?? 0;
   }
 
-  async deleteMany(ids: string[], accountId: string): Promise<number> {
+  async DeleteMany(ids: string[], accountId: string): Promise<number> {
     const result = await this.repository.delete({ id: In(ids), accountId });
     return result.affected ?? 0;
   }
 
-  async deleteAll(accountId: string): Promise<number> {
+  async DeleteAll(accountId: string): Promise<number> {
     const result = await this.repository.delete({ accountId });
     return result.affected ?? 0;
   }
 
-  async countUnread(accountId: string): Promise<number> {
+  async CountUnread(accountId: string): Promise<number> {
     return this.repository.count({ where: { accountId, isRead: false } });
   }
 
-  async findPaginated(
+  async FindPaginated(
     query: FilterNotificationQueryDto,
   ): Promise<PaginationResultDto<NotificationEntity>> {
     const page = query?.page ?? 1;

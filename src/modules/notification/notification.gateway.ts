@@ -130,7 +130,6 @@ export class NotificationGateway
    * Priority:
    *  1. socket.io auth payload  — connect({ auth: { token: '...' } })
    *  2. Authorization header    — Bearer <token>
-   *  3. AccessToken cookie      — same source as the HTTP guard
    */
   private extractToken(client: Socket): string | undefined {
     const authToken = client.handshake.auth?.token as string | undefined;
