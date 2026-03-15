@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Patch, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, Patch, Post, Req, UnauthorizedException } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -10,6 +10,7 @@ import { IAuthenticatedRequest } from 'src/interfaces/request';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dtos/create-notification.dto';
 import { MarkNotificationsReadDto } from './dtos/mark-notifications-read.dto';
+import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -70,5 +71,38 @@ export class NotificationController {
   async MarkAllAsRead(@Req() req: IAuthenticatedRequest) {
     if (!req.accountInfo?.sub) throw new UnauthorizedException();
     return this.notificationService.MarkAllAsRead(req.accountInfo.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Delete selected notifications',
+    description:
+      'Permanently deletes the provided notification IDs for the authenticated user. ' +
+      'IDs that do not exist or belong to another user are silently ignored.',
+  })
+  @ApiBody({ type: DeleteNotificationsDto })
+  @ApiResponse({ status: 204, description: 'Notifications deleted.' })
+  @ApiResponse({ status: 400, description: 'notificationIds must be a non-empty array of UUIDs.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @HttpCode(204)
+  @Delete()
+  async DeleteMany(
+    @Body() dto: DeleteNotificationsDto,
+    @Req() req: IAuthenticatedRequest,
+  ) {
+    if (!req.accountInfo?.sub) throw new UnauthorizedException();
+    await this.notificationService.DeleteMany(dto, req.accountInfo.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Delete all notifications',
+    description: 'Permanently deletes every notification belonging to the authenticated user.',
+  })
+  @ApiResponse({ status: 204, description: 'All notifications deleted.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @HttpCode(204)
+  @Delete('all')
+  async DeleteAll(@Req() req: IAuthenticatedRequest) {
+    if (!req.accountInfo?.sub) throw new UnauthorizedException();
+    await this.notificationService.DeleteAll(req.accountInfo.sub);
   }
 }

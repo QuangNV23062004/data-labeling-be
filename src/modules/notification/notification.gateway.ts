@@ -105,6 +105,14 @@ export class NotificationGateway
     this.server.to(`account:${accountId}`).emit('notification.unread-count', { count });
   }
 
+  /**
+   * Notifies all sockets of the account that specific notifications were marked as read.
+   * Pass null for notificationIds to signal that all notifications were marked as read.
+   */
+  fireReadStatusToAccount(accountId: string, notificationIds: string[] | null): void {
+    this.server.to(`account:${accountId}`).emit('notification.read', { notificationIds });
+  }
+
   getConnectedSocketCount(accountId: string): number {
     return this.accountSockets.get(accountId)?.size ?? 0;
   }

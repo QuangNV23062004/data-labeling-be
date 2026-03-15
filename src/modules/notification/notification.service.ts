@@ -10,6 +10,7 @@ import { NotificationEntity } from './notification.entity';
 import { CreateNotificationDto } from './dtos/create-notification.dto';
 import { FilterNotificationQueryDto } from './dtos/filter-notification-query.dto';
 import { MarkNotificationsReadDto } from './dtos/mark-notifications-read.dto';
+import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 
 @Injectable()
 export class NotificationService extends BaseService {
@@ -89,11 +90,26 @@ export class NotificationService extends BaseService {
 
   async MarkManyAsRead(dto: MarkNotificationsReadDto, accountId: string): Promise<{ updated: number }> {
     const updated = await this.notificationRepository.markManyAsRead(dto.notificationIds, accountId);
+    const unreadCount = await this.notificationRepository.countUnread(accountId);
+    this.notificationGateway.fireReadStatusToAccount(accountId, dto.notificationIds);
+    this.notificationGateway.fireUnreadCountToAccount(accountId, unreadCount);
     return { updated };
   }
 
   async MarkAllAsRead(accountId: string): Promise<{ updated: number }> {
     const updated = await this.notificationRepository.markAllAsRead(accountId);
+    this.notificationGateway.fireReadStatusToAccount(accountId, null);
+    this.notificationGateway.fireUnreadCountToAccount(accountId, 0);
     return { updated };
+  }
+
+  async DeleteMany(dto: DeleteNotificationsDto, accountId: string): Promise<{ deleted: number }> {
+    const deleted = await this.notificationRepository.deleteMany(dto.notificationIds, accountId);
+    return { deleted };
+  }
+
+  async DeleteAll(accountId: string): Promise<{ deleted: number }> {
+    const deleted = await this.notificationRepository.deleteAll(accountId);
+    return { deleted };
   }
 }

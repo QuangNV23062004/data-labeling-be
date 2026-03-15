@@ -32,4 +32,18 @@ export class NotificationRepository extends BaseRepository<NotificationEntity> {
     );
     return result.affected ?? 0;
   }
+
+  async deleteMany(ids: string[], accountId: string): Promise<number> {
+    const result = await this.repository.delete({ id: In(ids), accountId });
+    return result.affected ?? 0;
+  }
+
+  async deleteAll(accountId: string): Promise<number> {
+    const result = await this.repository.delete({ accountId });
+    return result.affected ?? 0;
+  }
+
+  async countUnread(accountId: string): Promise<number> {
+    return this.repository.count({ where: { accountId, isRead: false } });
+  }
 }
