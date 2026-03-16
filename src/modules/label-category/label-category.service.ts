@@ -12,6 +12,8 @@ import {
 import { FilterLabelCategoryDto } from './dtos/filter-label-category.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { BaseService } from 'src/common/service/base.service';
+import { GetLabelCategoryStatisticsQueryDto } from './dtos/get-label-category-statistic.dto';
+import { LabelCategoryStatisticsDto } from './dtos/label-category-statistics.dto';
 
 @Injectable()
 export class LabelCategoryService extends BaseService {
@@ -96,6 +98,12 @@ export class LabelCategoryService extends BaseService {
       query,
       safeIncludedDeleted,
     );
+  }
+
+  async GetStatistics(
+    query: GetLabelCategoryStatisticsQueryDto,
+  ): Promise<LabelCategoryStatisticsDto> {
+    return this.labelCategoryRepository.GetStatistics(query.createdById);
   }
 
   async Update(

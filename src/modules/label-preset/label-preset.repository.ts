@@ -6,6 +6,8 @@ import unaccent from 'unaccent';
 import { FilterLabelPresetQueryDto } from './dtos/filter-label-preset-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { BaseRepository } from 'src/common/repository/base.repository';
+import { LabelEntity } from '../label/label.entity';
+import { LabelPresetStatisticsDto } from './dtos/label-preset-statistics.dto';
 
 @Injectable()
 export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
@@ -246,5 +248,63 @@ export class LabelPresetRepository extends BaseRepository<LabelPresetEntity> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.delete(id);
     return (result?.affected as number) > 0;
+  }
+
+  async GetStatistics(
+    createdById?: string,
+    entityManager?: EntityManager,
+  ): Promise<LabelPresetStatisticsDto> {
+    const repository = await this.GetRepository(entityManager);
+    const qb = repository.createQueryBuilder('labelPreset');
+
+    qb.select('COUNT(DISTINCT labelPreset.id)', 'totalPresets')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN label.id IS NOT NULL THEN labelPreset.id END)',
+        'presetsWithLabels',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN label.id IS NOT NULL THEN label.id END)',
+        'distinctLabels',
+      )
+      .addSelect(
+        'COUNT(CASE WHEN label.id IS NOT NULL THEN 1 END)',
+        'presetLabelLinks',
+      )
+      .leftJoin(
+        'label_presets_mapping',
+        'mapping',
+        'mapping.preset_id = labelPreset.id',
+      )
+      .leftJoin(
+        LabelEntity,
+        'label',
+        'label.id = mapping.label_id AND label.deletedAt IS NULL',
+      )
+      .where('labelPreset.deletedAt IS NULL');
+
+    if (createdById) {
+      qb.andWhere('labelPreset.createdById = :createdById', { createdById });
+    }
+
+    const raw = await qb.getRawOne<{
+      totalPresets: string;
+      presetsWithLabels: string;
+      distinctLabels: string;
+      presetLabelLinks: string;
+    }>();
+
+    const totalPresets = Number(raw?.totalPresets ?? 0);
+    const presetsWithLabels = Number(raw?.presetsWithLabels ?? 0);
+    const distinctLabels = Number(raw?.distinctLabels ?? 0);
+    const presetLabelLinks = Number(raw?.presetLabelLinks ?? 0);
+
+    return {
+      totalPresets,
+      presetsWithLabels,
+      avgLabelsPerPreset:
+        totalPresets > 0 ? presetLabelLinks / totalPresets : 0,
+      avgPresetsPerLabel:
+        distinctLabels > 0 ? presetLabelLinks / distinctLabels : 0,
+    };
   }
 }

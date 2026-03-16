@@ -28,6 +28,8 @@ import { ProjectDomain } from './project.domain';
 import { AnnotatorBreakdownItem } from 'src/types/annotator-breakdown-items.types';
 import { CompleteProjectDto } from './dtos/complete-project.dto';
 import { ProjectTaskRepository } from '../project-task/project-task.repository';
+import { GetProjectStatisticsQueryDto } from './dtos/get-project-statistics-query.dto';
+import { ProjectStatisticsDto } from './dtos/project-statistics.dto';
 
 @Injectable()
 export class ProjectService extends BaseService {
@@ -188,6 +190,12 @@ export class ProjectService extends BaseService {
     );
     query.includeDeleted = safeIncludedDeleted;
     return await this.projectRepository.FindPaginated(query);
+  }
+
+  async GetStatistics(
+    query: GetProjectStatisticsQueryDto,
+  ): Promise<ProjectStatisticsDto> {
+    return await this.projectRepository.GetStatistics(query.createdById);
   }
 
   async CompleteProject(dto: CompleteProjectDto, accountInfo?: AccountInfo) {

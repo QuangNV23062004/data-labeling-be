@@ -34,6 +34,8 @@ import { FilterProjectQueryDto } from './dtos/filter-project-query.dto';
 import { memoryStorage } from 'multer';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { CompleteProjectDto } from './dtos/complete-project.dto';
+import { GetProjectStatisticsQueryDto } from './dtos/get-project-statistics-query.dto';
+import { ProjectStatisticsDto } from './dtos/project-statistics.dto';
 
 @ApiTags('Project')
 @ApiBearerAuth()
@@ -130,6 +132,16 @@ export class ProjectController {
     @Req() req: IAuthenticatedRequest,
   ): Promise<PaginationResultDto<ProjectEntity>> {
     return await this.projectService.GetPaginated(query, req?.accountInfo);
+  }
+
+  @ApiOperation({ summary: 'Get project statistics' })
+  @ApiResponse({ status: 200, description: 'Project statistics retrieved' })
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @Get('statistics')
+  async GetStatistics(
+    @Query() query: GetProjectStatisticsQueryDto,
+  ): Promise<ProjectStatisticsDto> {
+    return await this.projectService.GetStatistics(query);
   }
 
   @ApiOperation({ summary: 'Get Project by Id' })

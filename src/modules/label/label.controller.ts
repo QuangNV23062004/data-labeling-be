@@ -24,6 +24,8 @@ import { CreateLabelDto } from './dtos/create-label.dto';
 import { IAuthenticatedRequest } from 'src/interfaces/request';
 import { UpdateLabelDto } from './dtos/update-label.dto';
 import { FilterLabelQueryDto } from './dtos/filter-label-query.dto';
+import { GetLabelStatisticsQueryDto } from './dtos/get-label-statistic.dto';
+import { LabelStatisticsDto } from './dtos/label-statistics.dto';
 
 @ApiTags('Labels')
 @ApiBearerAuth()
@@ -110,6 +112,16 @@ export class LabelController {
     @Query('includeDeleted') includeDeleted: boolean = false,
   ) {
     return this.labelService.FindAll(query, includeDeleted, req?.accountInfo);
+  }
+
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @Get('statistics')
+  @ApiOperation({ summary: 'Get label statistics' })
+  @ApiResponse({ status: 200, description: 'Label statistics retrieved' })
+  async GetStatistics(
+    @Query() query: GetLabelStatisticsQueryDto,
+  ): Promise<LabelStatisticsDto> {
+    return this.labelService.GetStatistics(query);
   }
 
   @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)

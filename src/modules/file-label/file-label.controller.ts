@@ -97,11 +97,13 @@ export class FileLabelController {
   async FindAll(
     @Query() query: FilterFileLabelQueryDto,
     @Query('includeDeleted') includeDeleted: boolean = false,
+    @Query('excludeReassigned') excludeReassigned: boolean = true,
     @Req() req: IAuthenticatedRequest,
   ) {
     return await this.fileLabelService.FindAll(
       query,
       includeDeleted,
+      excludeReassigned,
       req?.accountInfo,
     );
   }
@@ -114,11 +116,13 @@ export class FileLabelController {
   async FindPaginated(
     @Query() query: FilterFileLabelQueryDto,
     @Query('includeDeleted') includeDeleted: boolean = false,
+    @Query('excludeReassigned') excludeReassigned: boolean = true,
     @Req() req: IAuthenticatedRequest,
   ) {
     return await this.fileLabelService.FindPaginated(
       query,
       includeDeleted,
+      excludeReassigned,
       req?.accountInfo,
     );
   }

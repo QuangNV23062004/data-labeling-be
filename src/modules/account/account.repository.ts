@@ -10,6 +10,8 @@ import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto
 import { Role } from './enums/role.enum';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { IsNull } from 'typeorm';
+import { Status } from './enums/account-status.enum';
+import { AccountStatisticsDto } from './dtos/account-statistics.dto';
 
 @Injectable()
 export class AccountRepository extends BaseRepository<AccountEntity> {
@@ -182,5 +184,95 @@ export class AccountRepository extends BaseRepository<AccountEntity> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
+  }
+
+  async GetStatistics(
+    includeDeleted: boolean,
+    excludeId: string,
+    roles: Role[],
+    entityManager?: EntityManager,
+  ): Promise<AccountStatisticsDto> {
+    if (!roles.length) {
+      return {
+        totalAccounts: 0,
+        adminCount: 0,
+        managerCount: 0,
+        annotatorCount: 0,
+        reviewerCount: 0,
+        activeCount: 0,
+        inactiveCount: 0,
+        needChangePasswordCount: 0,
+      };
+    }
+
+    const repository = await this.GetRepository(entityManager);
+    const qb = repository
+      .createQueryBuilder('account')
+      .select('COUNT(account.id)', 'totalAccounts')
+      .addSelect(
+        'SUM(CASE WHEN account.role = :adminRole THEN 1 ELSE 0 END)',
+        'adminCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.role = :managerRole THEN 1 ELSE 0 END)',
+        'managerCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.role = :annotatorRole THEN 1 ELSE 0 END)',
+        'annotatorCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.role = :reviewerRole THEN 1 ELSE 0 END)',
+        'reviewerCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.status = :activeStatus THEN 1 ELSE 0 END)',
+        'activeCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.status = :inactiveStatus THEN 1 ELSE 0 END)',
+        'inactiveCount',
+      )
+      .addSelect(
+        'SUM(CASE WHEN account.status = :needChangePasswordStatus THEN 1 ELSE 0 END)',
+        'needChangePasswordCount',
+      )
+      .where('account.id != :excludeId', { excludeId })
+      .andWhere('account.role IN (:...roles)', { roles })
+      .setParameters({
+        adminRole: Role.ADMIN,
+        managerRole: Role.MANAGER,
+        annotatorRole: Role.ANNOTATOR,
+        reviewerRole: Role.REVIEWER,
+        activeStatus: Status.ACTIVE,
+        inactiveStatus: Status.INACTIVE,
+        needChangePasswordStatus: Status.NEED_CHANGE_PASSWORD,
+      });
+
+    if (!includeDeleted) {
+      qb.andWhere('account.deletedAt IS NULL');
+    }
+
+    const raw = await qb.getRawOne<{
+      totalAccounts: string;
+      adminCount: string;
+      managerCount: string;
+      annotatorCount: string;
+      reviewerCount: string;
+      activeCount: string;
+      inactiveCount: string;
+      needChangePasswordCount: string;
+    }>();
+
+    return {
+      totalAccounts: Number(raw?.totalAccounts ?? 0),
+      adminCount: Number(raw?.adminCount ?? 0),
+      managerCount: Number(raw?.managerCount ?? 0),
+      annotatorCount: Number(raw?.annotatorCount ?? 0),
+      reviewerCount: Number(raw?.reviewerCount ?? 0),
+      activeCount: Number(raw?.activeCount ?? 0),
+      inactiveCount: Number(raw?.inactiveCount ?? 0),
+      needChangePasswordCount: Number(raw?.needChangePasswordCount ?? 0),
+    };
   }
 }

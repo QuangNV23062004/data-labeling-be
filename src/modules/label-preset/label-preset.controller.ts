@@ -24,6 +24,8 @@ import { Roles } from 'src/decorators';
 import { Role } from '../account/enums/role.enum';
 import { FilterLabelPresetQueryDto } from './dtos/filter-label-preset-query.dto';
 import { UpdateLabelPresetDto } from './dtos/update-label-preset.dto';
+import { GetLabelPresetStatisticsQueryDto } from './dtos/get-label-preset-statistic.dto';
+import { LabelPresetStatisticsDto } from './dtos/label-preset-statistics.dto';
 
 @ApiTags('Label Presets')
 @ApiBearerAuth()
@@ -98,6 +100,19 @@ export class LabelPresetController {
       includeDeleted,
       req.accountInfo,
     );
+  }
+
+  @Get('statistics')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Get label preset statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Label preset statistics retrieved',
+  })
+  async GetStatistics(
+    @Query() query: GetLabelPresetStatisticsQueryDto,
+  ): Promise<LabelPresetStatisticsDto> {
+    return this.labelPresetService.GetStatistics(query);
   }
 
   @Get(':id')

@@ -18,6 +18,8 @@ import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto
 import { UpdateLabelDto } from './dtos/update-label.dto';
 import { BaseService } from 'src/common/service/base.service';
 import { ProjectConfigurationRepository } from '../project-configuration/project-configuration.repository';
+import { GetLabelStatisticsQueryDto } from './dtos/get-label-statistic.dto';
+import { LabelStatisticsDto } from './dtos/label-statistics.dto';
 
 @Injectable()
 export class LabelService extends BaseService {
@@ -105,6 +107,12 @@ export class LabelService extends BaseService {
       includeDeleted,
     );
     return this.labelRepository.FindPaginated(query, includeDeletedSafe);
+  }
+
+  async GetStatistics(
+    query: GetLabelStatisticsQueryDto,
+  ): Promise<LabelStatisticsDto> {
+    return this.labelRepository.GetStatistics(query.createdById);
   }
 
   async Update(

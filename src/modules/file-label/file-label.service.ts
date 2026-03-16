@@ -44,6 +44,8 @@ export class FileLabelService extends BaseService {
   async FindAll(
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean = false,
+
+    excludeReassigned: boolean = true,
     accountInfo?: AccountInfo,
   ): Promise<FileLabelEntity[]> {
     const safeIncludedDeleted = this.getIncludeDeleted(
@@ -51,12 +53,18 @@ export class FileLabelService extends BaseService {
       includeDeleted,
     );
 
-    return this.repository.FindAll(query, safeIncludedDeleted);
+    return this.repository.FindAll(
+      query,
+      safeIncludedDeleted,
+      undefined,
+      excludeReassigned,
+    );
   }
 
   async FindPaginated(
     query: FilterFileLabelQueryDto,
     includeDeleted: boolean = false,
+    excludeReassigned: boolean = true,
     accountInfo?: AccountInfo,
   ): Promise<PaginationResultDto<FileLabelEntity>> {
     const safeIncludedDeleted = this.getIncludeDeleted(
@@ -64,7 +72,12 @@ export class FileLabelService extends BaseService {
       includeDeleted,
     );
 
-    return this.repository.FindPaginated(query, safeIncludedDeleted);
+    return this.repository.FindPaginated(
+      query,
+      safeIncludedDeleted,
+      undefined,
+      excludeReassigned,
+    );
   }
 
   async FindById(
@@ -373,9 +386,10 @@ export class FileLabelService extends BaseService {
 
         this.fileLabelDomain.validateFileLabelNotReassigned(existingFileLabel);
 
-        const result = await this.repository.UpdateStatus(
+        const result = await this.repository.UpdateStatusAndReviewer(
           existingFileLabel.id,
           dto.status || existingFileLabel.status,
+          file?.reviewerId ?? existingFileLabel.reviewerId,
           transactionalEntityManager,
         );
 
@@ -384,6 +398,8 @@ export class FileLabelService extends BaseService {
             `Failed to update file label status to ${dto.status}`,
           );
         }
+
+        existingFileLabel = result;
       }
 
       const { round, role, type } =

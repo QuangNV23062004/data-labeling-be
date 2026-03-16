@@ -314,6 +314,13 @@ export class FileService extends BaseService {
           this.fileDomain.validateReviewer(reviewer, data.reviewerId, id);
 
           entity.reviewerId = data.reviewerId;
+
+          // Keep active file-label ownership in sync with the file reviewer assignment.
+          await this.fileLabelRepository.BatchUpdateReviewerByFileId(
+            id,
+            data.reviewerId,
+            transactionalEntityManager,
+          );
         }
 
         const isProjectChanged = previousProjectId !== entity.projectId;

@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { AuthPasswordService } from '../auth/services/auth-password.service';
 import { BaseService } from 'src/common/service/base.service';
+import { AccountStatisticsDto } from './dtos/account-statistics.dto';
 import {
   AccountNotFoundException,
   EmailInUseException,
@@ -107,6 +108,24 @@ export class AccountService extends BaseService {
       accountInfo?.sub as string,
       role,
       query,
+    );
+  }
+
+  async GetStatistics(
+    accountInfo?: AccountInfo,
+    includeDeleted?: boolean,
+  ): Promise<AccountStatisticsDto> {
+    const safeIncludedDeleted: boolean = this.getIncludeDeleted(
+      accountInfo,
+      includeDeleted,
+    );
+
+    const roles = this.getAllowedRoles(accountInfo);
+
+    return this.accountRepository.GetStatistics(
+      safeIncludedDeleted,
+      accountInfo?.sub as string,
+      roles,
     );
   }
 
