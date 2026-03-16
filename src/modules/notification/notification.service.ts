@@ -74,4 +74,9 @@ export class NotificationService extends BaseService {
     this.notificationGateway.fireDeletedToAccount(accountId, null);
     return { deleted };
   }
+
+  async CountUnread(accountId: string): Promise<{ unreadCount: number }> {
+    const unreadCount = await this.notificationRepository.CountUnread(accountId);
+    return { unreadCount };
+  }
 }

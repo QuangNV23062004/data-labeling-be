@@ -21,6 +21,22 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @ApiOperation({
+    summary: 'Get unread notification count',
+    description: 'Returns the total number of unread notifications for the authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Number of unread notifications.',
+    schema: { example: { unreadCount: 5 } },
+  })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  @Get('unread-count')
+  async CountUnread(@Req() req: IAuthenticatedRequest) {
+    if (!req.accountInfo?.sub) throw new UnauthorizedException();
+    return this.notificationService.CountUnread(req.accountInfo.sub);
+  }
+
+  @ApiOperation({
     summary: 'Get paginated notifications',
     description: 'Returns a paginated list of notifications for the authenticated user. Supports filtering by read status.',
   })
