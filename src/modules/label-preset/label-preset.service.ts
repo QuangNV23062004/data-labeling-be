@@ -14,6 +14,8 @@ import { FilterLabelPresetQueryDto } from './dtos/filter-label-preset-query.dto'
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { UpdateLabelPresetDto } from './dtos/update-label-preset.dto';
 import { LabelRepository } from '../label/label.repository';
+import { GetLabelPresetStatisticsQueryDto } from './dtos/get-label-preset-statistic.dto';
+import { LabelPresetStatisticsDto } from './dtos/label-preset-statistics.dto';
 
 @Injectable()
 export class LabelPresetService extends BaseService {
@@ -88,6 +90,12 @@ export class LabelPresetService extends BaseService {
       query,
       safeIncludeDeleted,
     );
+  }
+
+  async GetStatistics(
+    query: GetLabelPresetStatisticsQueryDto,
+  ): Promise<LabelPresetStatisticsDto> {
+    return this.labelPresetRepository.GetStatistics(query.createdById);
   }
 
   async FindById(

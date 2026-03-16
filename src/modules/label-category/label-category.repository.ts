@@ -10,6 +10,8 @@ import { In } from 'typeorm/find-options/operator/In';
 import unaccent from 'unaccent';
 import { ILike } from 'typeorm/find-options/operator/ILike';
 import { BaseRepository } from 'src/common/repository/base.repository';
+import { LabelEntity } from '../label/label.entity';
+import { LabelCategoryStatisticsDto } from './dtos/label-category-statistics.dto';
 
 @Injectable()
 export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity> {
@@ -234,5 +236,63 @@ export class LabelCategoryRepository extends BaseRepository<LabelCategoryEntity>
     const repository = await this.GetRepository(entityManager);
     const result = await repository.update(id, { deletedAt: null });
     return (result?.affected ?? 0) > 0;
+  }
+
+  async GetStatistics(
+    createdById?: string,
+    entityManager?: EntityManager,
+  ): Promise<LabelCategoryStatisticsDto> {
+    const repository = await this.GetRepository(entityManager);
+    const qb = repository.createQueryBuilder('category');
+
+    qb.select('COUNT(DISTINCT category.id)', 'totalCategories')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN label.id IS NOT NULL THEN category.id END)',
+        'categoriesWithLabels',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN label.id IS NOT NULL THEN label.id END)',
+        'distinctLabels',
+      )
+      .addSelect(
+        'COUNT(CASE WHEN label.id IS NOT NULL THEN 1 END)',
+        'categoryLabelLinks',
+      )
+      .leftJoin(
+        'label_categories_mapping',
+        'mapping',
+        'mapping.category_id = category.id',
+      )
+      .leftJoin(
+        LabelEntity,
+        'label',
+        'label.id = mapping.label_id AND label.deletedAt IS NULL',
+      )
+      .where('category.deletedAt IS NULL');
+
+    if (createdById) {
+      qb.andWhere('category.createdById = :createdById', { createdById });
+    }
+
+    const raw = await qb.getRawOne<{
+      totalCategories: string;
+      categoriesWithLabels: string;
+      distinctLabels: string;
+      categoryLabelLinks: string;
+    }>();
+
+    const totalCategories = Number(raw?.totalCategories ?? 0);
+    const categoriesWithLabels = Number(raw?.categoriesWithLabels ?? 0);
+    const distinctLabels = Number(raw?.distinctLabels ?? 0);
+    const categoryLabelLinks = Number(raw?.categoryLabelLinks ?? 0);
+
+    return {
+      totalCategories,
+      categoriesWithLabels,
+      avgLabelsPerCategory:
+        totalCategories > 0 ? categoryLabelLinks / totalCategories : 0,
+      avgCategoriesPerLabel:
+        distinctLabels > 0 ? categoryLabelLinks / distinctLabels : 0,
+    };
   }
 }

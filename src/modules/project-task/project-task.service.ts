@@ -71,6 +71,18 @@ export class ProjectTaskService {
         throw new UserNotFoundException(dto.assignedUserId, 'Assigned User');
       }
 
+      if (
+        assignedUser.role !== Role.ANNOTATOR &&
+        assignedUser.role !== Role.REVIEWER
+      ) {
+        throw new InvalidProjectTaskException(
+          `Assigned user must have role of either ${Role.ANNOTATOR} or ${Role.REVIEWER}, but got ${assignedUser.role}`,
+        );
+      }
+      const assignedUserRole = assignedUser.role as
+        | Role.ANNOTATOR
+        | Role.REVIEWER;
+
       // 4. Validate all file IDs exist
       const files = await this.fileRepository.FindByIds(
         dto.fileIds,
@@ -86,6 +98,34 @@ export class ProjectTaskService {
         throw new MultipleFilesNotFoundException(missingFileIds);
       }
 
+      const existingTask =
+        await this.projectTaskRepository.FindLatestByProjectAssigneeAndRole(
+          dto.projectId,
+          dto.assignedUserId,
+          assignedUserRole,
+          false,
+          false,
+          transactionalEntityManager,
+        );
+
+      if (existingTask) {
+        let projectTask = existingTask;
+        projectTask.fileIds = Array.from(
+          new Set([...projectTask.fileIds, ...dto.fileIds]),
+        );
+        const updatedProjectTask = await this.projectTaskRepository.Update(
+          projectTask,
+          transactionalEntityManager,
+        );
+
+        await this.syncFileAssigneesFromTasks(
+          transactionalEntityManager,
+          dto.fileIds,
+          [assignedUserRole],
+        );
+
+        return updatedProjectTask;
+      }
       // 5. Create the project task
       const projectTask = new ProjectTaskEntity();
       projectTask.projectId = dto.projectId;
@@ -99,16 +139,7 @@ export class ProjectTaskService {
       projectTask.completedAt = null;
 
       // Set assignedUserRole based on the user's role
-      if (
-        assignedUser.role === Role.ANNOTATOR ||
-        assignedUser.role === Role.REVIEWER
-      ) {
-        projectTask.assignedUserRole = assignedUser.role;
-      } else {
-        throw new InvalidProjectTaskException(
-          `Assigned user must have role of either ${Role.ANNOTATOR} or ${Role.REVIEWER}, but got ${assignedUser.role}`,
-        );
-      }
+      projectTask.assignedUserRole = assignedUserRole;
 
       const savedProjectTask = await this.projectTaskRepository.Create(
         projectTask,
@@ -118,7 +149,7 @@ export class ProjectTaskService {
       await this.syncFileAssigneesFromTasks(
         transactionalEntityManager,
         dto.fileIds,
-        [assignedUser.role as Role.ANNOTATOR | Role.REVIEWER],
+        [assignedUserRole],
       );
 
       return savedProjectTask;

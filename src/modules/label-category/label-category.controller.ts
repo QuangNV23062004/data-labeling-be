@@ -24,6 +24,8 @@ import { IAuthenticatedRequest } from 'src/interfaces/request';
 import { FilterLabelCategoryDto } from './dtos/filter-label-category.dto';
 import { Roles } from 'src/decorators';
 import { Role } from '../account/enums/role.enum';
+import { GetLabelCategoryStatisticsQueryDto } from './dtos/get-label-category-statistic.dto';
+import { LabelCategoryStatisticsDto } from './dtos/label-category-statistics.dto';
 
 @ApiTags('Label Categories')
 @ApiBearerAuth()
@@ -131,6 +133,19 @@ export class LabelCategoryController {
       includeDeleted,
       req?.accountInfo,
     );
+  }
+
+  @Get('statistics')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Get label category statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Label category statistics retrieved',
+  })
+  async GetStatistics(
+    @Query() query: GetLabelCategoryStatisticsQueryDto,
+  ): Promise<LabelCategoryStatisticsDto> {
+    return this.labelCategoryService.GetStatistics(query);
   }
 
   @Get(':id')

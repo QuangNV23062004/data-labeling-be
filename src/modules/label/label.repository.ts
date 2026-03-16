@@ -10,6 +10,9 @@ import { ILike } from 'typeorm/find-options/operator/ILike';
 import { Not } from 'typeorm/find-options/operator/Not';
 import { Repository } from 'typeorm';
 import { BaseRepository } from 'src/common/repository/base.repository';
+import { LabelChecklistQuestionEntity } from '../label-checklist-question/label-checklist-question.entity';
+import { Role } from '../account/enums/role.enum';
+import { LabelStatisticsDto } from './dtos/label-statistics.dto';
 
 @Injectable()
 export class LabelRepository extends BaseRepository<LabelEntity> {
@@ -323,5 +326,55 @@ export class LabelRepository extends BaseRepository<LabelEntity> {
     const repository = await this.GetRepository(entityManager);
     const result = await repository.delete(id);
     return (result?.affected ?? 0) > 0;
+  }
+
+  async GetStatistics(
+    createdById?: string,
+    entityManager?: EntityManager,
+  ): Promise<LabelStatisticsDto> {
+    const repository = await this.GetRepository(entityManager);
+    const qb = repository.createQueryBuilder('label');
+
+    qb.select('COUNT(DISTINCT label.id)', 'totalLabels')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN checklistQuestion.id IS NOT NULL THEN label.id END)',
+        'labelsWithQuestions',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN checklistQuestion.roleEnum = :annotatorRole THEN 1 ELSE 0 END), 0)',
+        'annotatorQuestions',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN checklistQuestion.roleEnum = :reviewerRole THEN 1 ELSE 0 END), 0)',
+        'reviewerQuestions',
+      )
+      .leftJoin(
+        LabelChecklistQuestionEntity,
+        'checklistQuestion',
+        'checklistQuestion.labelId = label.id AND checklistQuestion.deletedAt IS NULL',
+      )
+      .where('label.deletedAt IS NULL')
+      .setParameters({
+        annotatorRole: Role.ANNOTATOR,
+        reviewerRole: Role.REVIEWER,
+      });
+
+    if (createdById) {
+      qb.andWhere('label.createdById = :createdById', { createdById });
+    }
+
+    const raw = await qb.getRawOne<{
+      totalLabels: string;
+      labelsWithQuestions: string;
+      annotatorQuestions: string;
+      reviewerQuestions: string;
+    }>();
+
+    return {
+      totalLabels: Number(raw?.totalLabels ?? 0),
+      labelsWithQuestions: Number(raw?.labelsWithQuestions ?? 0),
+      annotatorQuestions: Number(raw?.annotatorQuestions ?? 0),
+      reviewerQuestions: Number(raw?.reviewerQuestions ?? 0),
+    };
   }
 }

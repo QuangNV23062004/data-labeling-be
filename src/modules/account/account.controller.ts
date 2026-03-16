@@ -27,6 +27,7 @@ import {
   ApiTags,
   ApiBody,
 } from '@nestjs/swagger';
+import { AccountStatisticsDto } from './dtos';
 
 @ApiTags('Account')
 @ApiBearerAuth()
@@ -90,6 +91,26 @@ export class AccountController {
     return await this.accountService.FindPaginated(
       request.accountInfo,
       filterAccountDto,
+      includeDeleted,
+    );
+  }
+
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @ApiOperation({ summary: 'Get account statistics' })
+  @ApiQuery({
+    name: 'includeDeleted',
+    required: false,
+    type: Boolean,
+    description: 'Include soft-deleted accounts',
+  })
+  @ApiResponse({ status: 200, description: 'Account statistics retrieved' })
+  @Get('statistics')
+  async GetStatistics(
+    @Req() request: IAuthenticatedRequest,
+    @Query('includeDeleted') includeDeleted: boolean = false,
+  ): Promise<AccountStatisticsDto> {
+    return await this.accountService.GetStatistics(
+      request.accountInfo,
       includeDeleted,
     );
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Not, Repository } from 'typeorm';
 import { FileLabelEntity } from './file-label.entity';
 import { FilterFileLabelQueryDto } from './dtos/filter-file-label-query.dto';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
@@ -55,7 +55,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else if (!excludeReassigned) {
+    } else if (excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -145,7 +145,7 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
 
     if (query?.status) {
       qb.andWhere('fileLabel.status = :status', { status: query.status });
-    } else if (!excludeReassigned) {
+    } else if (excludeReassigned) {
       qb.andWhere('fileLabel.status != :status', {
         status: FileLabelStatusEnums.REASSIGNED,
       });
@@ -453,6 +453,20 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
     return null;
   }
 
+  async UpdateStatusAndReviewer(
+    id: string,
+    status: FileLabelStatusEnums,
+    reviewerId: string,
+    em?: EntityManager,
+  ): Promise<FileLabelEntity | null> {
+    const repository = await this.GetRepository(em);
+    const fileLabel = await repository.update({ id }, { status, reviewerId });
+    if (fileLabel.affected && fileLabel.affected > 0) {
+      return await repository.findOne({ where: { id } });
+    }
+    return null;
+  }
+
   async BatchUpdateStatus(
     ids: string[],
     status: FileLabelStatusEnums,
@@ -460,6 +474,24 @@ export class FileLabelRepository extends BaseRepository<FileLabelEntity> {
   ): Promise<boolean> {
     const repository = await this.GetRepository(em);
     const result = await repository.update({ id: In(ids) }, { status });
+    return result?.affected !== undefined && (result?.affected as number) > 0;
+  }
+
+  async BatchUpdateReviewerByFileId(
+    fileId: string,
+    reviewerId: string,
+    em?: EntityManager,
+  ): Promise<boolean> {
+    const repository = await this.GetRepository(em);
+    const result = await repository.update(
+      {
+        fileId,
+        deletedAt: IsNull(),
+        status: Not(FileLabelStatusEnums.REASSIGNED),
+      },
+      { reviewerId },
+    );
+
     return result?.affected !== undefined && (result?.affected as number) > 0;
   }
 
