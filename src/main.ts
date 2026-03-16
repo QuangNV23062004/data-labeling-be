@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -39,6 +40,9 @@ async function bootstrap() {
 
   //Cookies from header
   app.use(cookieParser());
+
+  // WebSocket adapter (socket.io)
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   //Security
   app.use(
