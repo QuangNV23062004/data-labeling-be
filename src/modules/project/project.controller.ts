@@ -36,6 +36,8 @@ import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto
 import { CompleteProjectDto } from './dtos/complete-project.dto';
 import { GetProjectStatisticsQueryDto } from './dtos/get-project-statistics-query.dto';
 import { ProjectStatisticsDto } from './dtos/project-statistics.dto';
+import { SingleChartStatisticDto } from './dtos/chart-statistic.dto';
+import { GetChartStatisticsQueryDto } from './dtos/get-chart-statistic.dto';
 
 @ApiTags('Project')
 @ApiBearerAuth()
@@ -142,6 +144,15 @@ export class ProjectController {
     @Query() query: GetProjectStatisticsQueryDto,
   ): Promise<ProjectStatisticsDto> {
     return await this.projectService.GetStatistics(query);
+  }
+
+  @Get('chart-statistics')
+  @ApiOperation({ summary: 'Get Chart Statistics' })
+  @ApiResponse({ status: 200, description: 'Chart statistics retrieved' })
+  async GetChartStatistics(
+    @Query() query: GetChartStatisticsQueryDto,
+  ): Promise<SingleChartStatisticDto[]> {
+    return await this.projectService.GetChartStatistics(query);
   }
 
   @ApiOperation({ summary: 'Get Project by Id' })

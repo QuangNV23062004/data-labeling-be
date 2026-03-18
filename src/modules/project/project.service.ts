@@ -30,6 +30,8 @@ import { CompleteProjectDto } from './dtos/complete-project.dto';
 import { ProjectTaskRepository } from '../project-task/project-task.repository';
 import { GetProjectStatisticsQueryDto } from './dtos/get-project-statistics-query.dto';
 import { ProjectStatisticsDto } from './dtos/project-statistics.dto';
+import { SingleChartStatisticDto } from './dtos/chart-statistic.dto';
+import { GetChartStatisticsQueryDto } from './dtos/get-chart-statistic.dto';
 
 @Injectable()
 export class ProjectService extends BaseService {
@@ -294,5 +296,121 @@ export class ProjectService extends BaseService {
         history: historyEntities,
       };
     });
+  }
+
+  async GetChartStatistics(
+    query: GetChartStatisticsQueryDto,
+  ): Promise<SingleChartStatisticDto[]> {
+    if (query.mode === 'all-time') {
+      return await this.projectRepository.GetAllTimeYearlyChartStatistics(
+        query.createdById,
+      );
+    }
+
+    const hasCustomRange = Boolean(query.startDate || query.endDate);
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+    let intervalCount = 1;
+
+    if (hasCustomRange) {
+      if (!query.startDate || !query.endDate) {
+        throw new HttpException(
+          'Both startDate and endDate are required when using custom range.',
+          400,
+        );
+      }
+
+      startDate = new Date(query.startDate);
+      endDate = new Date(query.endDate);
+      intervalCount = query.intervalCount ?? 10;
+    } else {
+      const mode = query.mode ?? 'year';
+
+      switch (mode) {
+        case 'day': {
+          startDate = new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+          );
+          endDate = new Date(startDate);
+          endDate.setUTCHours(23, 59, 59, 999);
+          return await this.projectRepository.GetChartStatisticsByDayRange(
+            startDate,
+            endDate,
+            query.createdById,
+          );
+        }
+        case 'week': {
+          const today = new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+          );
+          const mondayOffset = (today.getUTCDay() + 6) % 7;
+
+          startDate = new Date(today);
+          startDate.setUTCDate(today.getUTCDate() - mondayOffset);
+
+          endDate = new Date(startDate);
+          endDate.setUTCDate(startDate.getUTCDate() + 6);
+          endDate.setUTCHours(23, 59, 59, 999);
+          return await this.projectRepository.GetChartStatisticsByDayRange(
+            startDate,
+            endDate,
+            query.createdById,
+          );
+        }
+        case 'month': {
+          const targetMonth = query.value ?? now.getUTCMonth() + 1;
+          if (targetMonth < 1 || targetMonth > 12) {
+            throw new HttpException(
+              'For month mode, value must be between 1 and 12.',
+              400,
+            );
+          }
+
+          const currentYear = now.getUTCFullYear();
+          startDate = new Date(Date.UTC(currentYear, targetMonth - 1, 1));
+          endDate = new Date(
+            Date.UTC(currentYear, targetMonth, 0, 23, 59, 59, 999),
+          );
+          return await this.projectRepository.GetChartStatisticsByDayRange(
+            startDate,
+            endDate,
+            query.createdById,
+          );
+        }
+        case 'year': {
+          const targetYear = query.value ?? now.getUTCFullYear();
+          startDate = new Date(Date.UTC(targetYear, 0, 1));
+          endDate = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
+          return await this.projectRepository.GetChartStatisticsByMonthRange(
+            startDate,
+            endDate,
+            query.createdById,
+          );
+        }
+        default:
+          throw new HttpException('Invalid chart statistics mode.', 400);
+      }
+    }
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new HttpException(
+        'Invalid startDate/endDate format. Please use ISO date format.',
+        400,
+      );
+    }
+
+    if (startDate > endDate) {
+      throw new HttpException('startDate must be before endDate.', 400);
+    }
+
+    intervalCount = Math.max(1, intervalCount);
+
+    return await this.projectRepository.GetChartStatisticsByInterval(
+      startDate,
+      endDate,
+      intervalCount,
+      query.createdById,
+    );
   }
 }
