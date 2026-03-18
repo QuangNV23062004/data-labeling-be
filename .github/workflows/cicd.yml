@@ -167,13 +167,16 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Get short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
           containerAppName: data-labeling-app
           resourceGroup: DefaultResourceGroup-CCAN
-          imageToDeploy: docker.io/${{ env.DOCKER_IMAGE_NAME }}:sha-${{ github.sha }}
+          imageToDeploy: docker.io/${{ env.DOCKER_IMAGE_NAME }}:sha-${{ steps.sha.outputs.short }}
 
   security-scan:
     runs-on: ubuntu-latest
