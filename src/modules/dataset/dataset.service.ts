@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { basename } from 'path';
-import { OnEvent } from '@nestjs/event-emitter';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { ProjectSnapshotRepository } from '../project-snapshot/project-snapshot.repository';
 import { ProjectSnapshotEntity } from '../project-snapshot/project-snapshot.entity';
 import { StorageService } from 'src/common/storage/storage.service';
 import { NotificationType } from '../notification/enums/notification-types.enums';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
 import { ExportRequestDto } from './dtos/export-request.dto';
 import {
   ExportEmptySnapshotException,
@@ -274,7 +274,7 @@ export class DatasetService {
       entry.zipBuffer = zipBuffer;
       entry.fileSize = zipBuffer.length;
 
-      this.eventEmitter.emit('notification.create', {
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
         accountId: entry.requestedById,
         title: 'Dataset export ready',
         content: `Your dataset export "${entry.snapshotName}-${entry.snapshotVersion}" is ready to download.`,

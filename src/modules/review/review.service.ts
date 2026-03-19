@@ -42,6 +42,7 @@ import { FileEntity } from '../file/file.entity';
 import { FileStatus } from '../file/enums/file-status.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from '../notification/enums/notification-types.enums';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
 
 @Injectable()
 export class ReviewService extends BaseService {
@@ -549,7 +550,7 @@ export class ReviewService extends BaseService {
 
     if (result.decision === Decision.REJECTED) {
       const fileNamePart = result.fileName ? ` for file "${result.fileName}"` : '';
-      this.eventEmitter.emit('notification.create', {
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
         accountId: result.annotatorId,
         title: 'Label rejected',
         content: `Your label${fileNamePart} was rejected during review. Please address the review feedback and resubmit.`,

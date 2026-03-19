@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { NOTIFICATION_EVENTS } from './enums/notification-events.constants';
 import { BaseService } from 'src/common/service/base.service';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { AccountRepository } from '../account/account.repository';
@@ -45,7 +46,7 @@ export class NotificationService extends BaseService {
     return saved;
   }
 
-  @OnEvent('notification.create')
+  @OnEvent(NOTIFICATION_EVENTS.CREATE)
   async handleNotificationCreate(dto: CreateNotificationDto): Promise<void> {
     try {
       await this.Create(dto);

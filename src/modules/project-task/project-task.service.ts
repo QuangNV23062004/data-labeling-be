@@ -21,6 +21,7 @@ import { Role } from '../account/enums/role.enum';
 import { EntityManager } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from '../notification/enums/notification-types.enums';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
 
 @Injectable()
 export class ProjectTaskService {
@@ -161,7 +162,7 @@ export class ProjectTaskService {
       };
     });
 
-    this.eventEmitter.emit('notification.create', {
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
       accountId: dto.assignedUserId,
       title: 'New task assigned',
       content: `You have been assigned a new task in project "${savedProjectTask.projectName}" with ${savedProjectTask.fileCount} file(s).`,

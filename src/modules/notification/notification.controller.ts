@@ -1,4 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_EVENTS } from './enums/notification-events.constants';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -18,7 +20,10 @@ import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 @ApiBearerAuth()
 @Controller('notifications')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @ApiOperation({
     summary: 'Get unread notification count',
@@ -60,15 +65,16 @@ export class NotificationController {
   @ApiOperation({
     summary: 'Send a test notification',
     description:
-      'Creates a notification for the specified account and immediately fires it over WebSocket. Intended for development/testing.',
+      'Emits a notification.create event, simulating the background event-driven flow used by other services. The notification is created asynchronously.',
   })
   @ApiBody({ type: CreateNotificationDto })
-  @ApiResponse({ status: 201, description: 'Notification created and fired to the target user.' })
+  @ApiResponse({ status: 202, description: 'Event emitted — notification will be created in the background.' })
   @ApiResponse({ status: 400, description: 'Validation failed — check required fields and UUID formats.' })
-  @ApiResponse({ status: 404, description: 'Target account not found.' })
+  @HttpCode(202)
   @Post('test-send')
   async TestSend(@Body() dto: CreateNotificationDto) {
-    return this.notificationService.Create(dto);
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, dto);
+    return { message: 'Notification event emitted' };
   }
 
   @ApiOperation({
