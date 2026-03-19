@@ -19,6 +19,8 @@ import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from '../account/enums/role.enum';
 import { EntityManager } from 'typeorm';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/enums/notification-types.enums';
 
 @Injectable()
 export class ProjectTaskService {
@@ -27,6 +29,7 @@ export class ProjectTaskService {
     private readonly projectRepository: ProjectRepository,
     private readonly accountRepository: AccountRepository,
     private readonly fileRepository: FileRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -35,7 +38,7 @@ export class ProjectTaskService {
   ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
 
-    return em.transaction(async (transactionalEntityManager) => {
+    const savedProjectTask = await em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project exists
       const project = await this.projectRepository.FindById(
         dto.projectId,
@@ -151,9 +154,25 @@ export class ProjectTaskService {
         dto.fileIds,
         [assignedUserRole],
       );
-
-      return savedProjectTask;
+      return {
+        task: savedProjectTask,
+        projectName: project.name,
+        fileCount: dto.fileIds.length,
+      };
     });
+
+    await this.notificationService.Create({
+      accountId: dto.assignedUserId,
+      title: 'New task assigned',
+      content: `You have been assigned a new task in project "${savedProjectTask.projectName}" with ${savedProjectTask.fileCount} file(s).`,
+      additionalData: {
+        type: NotificationType.TASK_ASSIGNED,
+        taskId: savedProjectTask.task.id,
+        projectId: dto.projectId,
+      },
+    });
+
+    return savedProjectTask.task;
   }
 
   async FindPaginated(

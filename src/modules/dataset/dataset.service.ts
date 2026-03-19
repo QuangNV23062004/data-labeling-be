@@ -5,6 +5,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { ProjectSnapshotRepository } from '../project-snapshot/project-snapshot.repository';
 import { ProjectSnapshotEntity } from '../project-snapshot/project-snapshot.entity';
 import { StorageService } from 'src/common/storage/storage.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/enums/notification-types.enums';
 import { ExportRequestDto } from './dtos/export-request.dto';
 import {
   ExportEmptySnapshotException,
@@ -20,6 +22,7 @@ interface ExportCacheEntry {
   snapshotId: string;
   snapshotName: string;
   snapshotVersion: string;
+  requestedById: string;
   status: ExportStatus;
   fileSize: number | null;
   zipBuffer: Buffer | null;
@@ -80,11 +83,13 @@ export class DatasetService {
   constructor(
     private readonly projectSnapshotRepository: ProjectSnapshotRepository,
     private readonly storageService: StorageService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async InitiateExport(
     snapshotId: string,
     config: ExportRequestDto,
+    requestedById: string,
   ): Promise<{ exportId: string; status: ExportStatus }> {
     const snapshot = await this.projectSnapshotRepository.FindById(snapshotId);
 
@@ -103,6 +108,7 @@ export class DatasetService {
       snapshotId: snapshot.id,
       snapshotName: snapshot.name,
       snapshotVersion: snapshot.version,
+      requestedById,
       status: 'PENDING',
       fileSize: null,
       zipBuffer: null,
@@ -267,6 +273,22 @@ export class DatasetService {
       entry.status = 'DONE';
       entry.zipBuffer = zipBuffer;
       entry.fileSize = zipBuffer.length;
+
+      try {
+        await this.notificationService.Create({
+          accountId: entry.requestedById,
+          title: 'Dataset export ready',
+          content: `Your dataset export "${entry.snapshotName}-${entry.snapshotVersion}" is ready to download.`,
+          additionalData: {
+            type: NotificationType.DATASET_EXPORT_READY,
+            exportId: entry.exportId,
+            snapshotId: entry.snapshotId,
+            fileSize: entry.fileSize,
+          },
+        });
+      } catch {
+        // Do not fail the export if notification sending fails
+      }
     } catch (err) {
       entry.status = 'FAILED';
       entry.error = err instanceof Error ? err.message : String(err);
