@@ -7,7 +7,6 @@ import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectModule } from '../project/project.module';
 import { AccountModule } from '../account/account.module';
 import { FileModule } from '../file/file.module';
-import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { NotificationModule } from '../notification/notification.module';
     forwardRef(() => ProjectModule),
     AccountModule,
     FileModule,
-    NotificationModule,
   ],
   controllers: [ProjectTaskController],
   providers: [ProjectTaskService, ProjectTaskRepository],

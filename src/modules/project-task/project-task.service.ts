@@ -19,7 +19,7 @@ import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from '../account/enums/role.enum';
 import { EntityManager } from 'typeorm';
-import { NotificationService } from '../notification/notification.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from '../notification/enums/notification-types.enums';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class ProjectTaskService {
     private readonly projectRepository: ProjectRepository,
     private readonly accountRepository: AccountRepository,
     private readonly fileRepository: FileRepository,
-    private readonly notificationService: NotificationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -161,7 +161,7 @@ export class ProjectTaskService {
       };
     });
 
-    await this.notificationService.Create({
+    this.eventEmitter.emit('notification.create', {
       accountId: dto.assignedUserId,
       title: 'New task assigned',
       content: `You have been assigned a new task in project "${savedProjectTask.projectName}" with ${savedProjectTask.fileCount} file(s).`,

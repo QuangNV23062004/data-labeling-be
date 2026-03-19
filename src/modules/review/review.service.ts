@@ -40,7 +40,7 @@ import { ReviewerAggregationStats } from './review.repository';
 import { EntityManager } from 'typeorm';
 import { FileEntity } from '../file/file.entity';
 import { FileStatus } from '../file/enums/file-status.enums';
-import { NotificationService } from '../notification/notification.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from '../notification/enums/notification-types.enums';
 
 @Injectable()
@@ -55,7 +55,7 @@ export class ReviewService extends BaseService {
     private readonly labelChecklistQuestionRepository: LabelChecklistQuestionRepository,
     private readonly reviewErrorRepository: ReviewErrorRepository,
     private readonly reviewErrorTypeRepository: ReviewErrorTypeRepository,
-    private readonly notificationService: NotificationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
   }
@@ -549,7 +549,7 @@ export class ReviewService extends BaseService {
 
     if (result.decision === Decision.REJECTED) {
       const fileNamePart = result.fileName ? ` for file "${result.fileName}"` : '';
-      await this.notificationService.Create({
+      this.eventEmitter.emit('notification.create', {
         accountId: result.annotatorId,
         title: 'Label rejected',
         content: `Your label${fileNamePart} was rejected during review. Please address the review feedback and resubmit.`,

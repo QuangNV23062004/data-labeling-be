@@ -10,7 +10,6 @@ import { ReviewErrorModule } from '../review-error/review-error.module';
 import { ReviewErrorTypeModule } from '../review-error-type/review-error-type.module';
 import { FileLabelModule } from '../file-label/file-label.module';
 import { LabelChecklistQuestionModule } from '../label-checklist-question/label-checklist-question.module';
-import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { NotificationModule } from '../notification/notification.module';
     ReviewErrorTypeModule,
     FileLabelModule,
     LabelChecklistQuestionModule,
-    NotificationModule,
   ],
   controllers: [ReviewController],
   providers: [ReviewService, ReviewRepository],
