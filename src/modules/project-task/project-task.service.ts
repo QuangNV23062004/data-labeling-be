@@ -128,7 +128,7 @@ export class ProjectTaskService {
           [assignedUserRole],
         );
 
-        return updatedProjectTask;
+        return { task: updatedProjectTask, projectName: project.name, fileCount: dto.fileIds.length };
       }
       // 5. Create the project task
       const projectTask = new ProjectTaskEntity();
