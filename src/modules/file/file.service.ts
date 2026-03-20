@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BaseService } from 'src/common/service/base.service';
 import { FileRepository } from './file.repository';
 import { AccountInfo } from 'src/interfaces/request';
@@ -38,6 +39,8 @@ import { Role } from '../account/enums/role.enum';
 import { FileLabelRepository } from '../file-label/file-label.repository';
 import { FileLabelStatusEnums } from '../file-label/enums/file-label.enums';
 import { ProjectTaskEntity } from '../project-task/project-task.entity';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
+import { NotificationType } from '../notification/enums/notification-types.enums';
 
 @Injectable()
 export class FileService extends BaseService {
@@ -50,6 +53,7 @@ export class FileService extends BaseService {
     private readonly projectRepository: ProjectRepository,
     private readonly fileLabelRepository: FileLabelRepository,
     private readonly fileDomain: FileDomain,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
   }
@@ -194,7 +198,8 @@ export class FileService extends BaseService {
     }
     const em = await this.repository.GetEntityManager();
     let oldFile;
-    const transactionResult = await em.transaction(
+    const { file: updatedFile, previousAnnotatorId, newAnnotatorId, previousReviewerId, newReviewerId }
+     = await em.transaction(
       async (transactionalEntityManager) => {
         const entity = await this.repository.FindById(
           id,
@@ -373,7 +378,13 @@ export class FileService extends BaseService {
           entity,
           transactionalEntityManager,
         );
-        return result;
+        return {
+          file: result,
+          previousAnnotatorId,
+          newAnnotatorId: entity.annotatorId,
+          previousReviewerId,
+          newReviewerId: entity.reviewerId,
+        };
       },
     );
 
@@ -387,7 +398,44 @@ export class FileService extends BaseService {
         );
       }
     }
-    return transactionResult;
+
+    this.emitAssignmentChangeNotifications(
+      updatedFile.fileName,
+      id,
+      { previous: previousAnnotatorId, next: newAnnotatorId },
+      { previous: previousReviewerId, next: newReviewerId },
+    );
+
+    return updatedFile;
+  }
+
+  private emitAssignmentChangeNotifications(
+    fileName: string,
+    fileId: string,
+    annotator: { previous: string | null; next: string | null },
+    reviewer: { previous: string | null; next: string | null },
+  ): void {
+    const emit = (accountId: string, title: string, content: string, type: NotificationType) =>
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+        accountId,
+        title,
+        content,
+        additionalData: { type, fileId },
+      });
+
+    if (annotator.previous !== annotator.next) {
+      if (annotator.previous)
+        emit(annotator.previous, 'File unassigned', `You have been unassigned from file "${fileName}".`, NotificationType.FILE_ANNOTATOR_CHANGED);
+      if (annotator.next)
+        emit(annotator.next, 'File assigned to you', `File "${fileName}" has been assigned to you for annotation.`, NotificationType.FILE_ANNOTATOR_CHANGED);
+    }
+
+    if (reviewer.previous !== reviewer.next) {
+      if (reviewer.previous)
+        emit(reviewer.previous, 'File unassigned', `You have been unassigned from reviewing file "${fileName}".`, NotificationType.FILE_REVIEWER_CHANGED);
+      if (reviewer.next)
+        emit(reviewer.next, 'File assigned to you for review', `File "${fileName}" has been assigned to you for review.`, NotificationType.FILE_REVIEWER_CHANGED);
+    }
   }
 
   async SoftDelete(id: string, accountInfo?: AccountInfo): Promise<boolean> {

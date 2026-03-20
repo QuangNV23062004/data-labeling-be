@@ -215,7 +215,7 @@ export class ProjectTaskService {
   ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
 
-    return em.transaction(async (transactionalEntityManager) => {
+    const result = await em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project task exists
       const projectTask = await this.projectTaskRepository.FindById(
         id,
@@ -228,6 +228,7 @@ export class ProjectTaskService {
 
       const previousAssignedRole = projectTask.assignedUserRole;
       const previousFileIds = [...projectTask.fileIds];
+      const previousAssignedTo = projectTask.assignedTo;
 
       // 2. Validate assigned user exists and update fields (if provided)
       if (dto.assignedUserId) {
@@ -338,13 +339,37 @@ export class ProjectTaskService {
         Array.from(rolesToSync),
       );
 
-      return updatedProjectTask;
+      return {
+        task: updatedProjectTask,
+        previousAssignedTo,
+        projectName: updatedProjectTask.project?.name ?? null,
+      };
     });
+
+    if (
+      dto.assignedUserId &&
+      result.previousAssignedTo !== result.task.assignedTo
+    ) {
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+        accountId: result.task.assignedTo,
+        title: 'Task reassigned to you',
+        content: result.projectName
+          ? `A task in project "${result.projectName}" has been reassigned to you.`
+          : 'A task has been reassigned to you.',
+        additionalData: {
+          type: NotificationType.TASK_REASSIGNED,
+          taskId: result.task.id,
+          projectId: result.task.projectId,
+        },
+      });
+    }
+
+    return result.task;
   }
 
   async Delete(id: string): Promise<void> {
     const em = await this.projectTaskRepository.GetEntityManager();
-    await em.transaction(async (transactionalEntityManager) => {
+    const result = await em.transaction(async (transactionalEntityManager) => {
       const projectTask = await this.projectTaskRepository.FindById(
         id,
         false,
@@ -374,6 +399,26 @@ export class ProjectTaskService {
           [projectTask.assignedUserRole],
         );
       }
+
+      return {
+        assignedUserId: projectTask.assignedTo,
+        projectName: projectTask.project?.name ?? null,
+        taskId: projectTask.id,
+        projectId: projectTask.projectId,
+      };
+    });
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+      accountId: result.assignedUserId,
+      title: 'Task removed',
+      content: result.projectName
+        ? `Your task in project "${result.projectName}" has been removed.`
+        : 'One of your tasks has been removed.',
+      additionalData: {
+        type: NotificationType.TASK_DELETED,
+        taskId: result.taskId,
+        projectId: result.projectId,
+      },
     });
   }
 
