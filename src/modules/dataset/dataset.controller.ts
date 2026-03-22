@@ -7,7 +7,9 @@ import {
   Param,
   Post,
   Query,
+  Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -29,6 +31,7 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { RolesGuard } from 'src/guards/role.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { Role } from '../account/enums/role.enum';
+import { IAuthenticatedRequest } from 'src/interfaces/request';
 
 @ApiTags('Datasets')
 @ApiBearerAuth()
@@ -56,8 +59,12 @@ export class DatasetController {
   async InitiateExport(
     @Param('snapshotId') snapshotId: string,
     @Query() config: ExportRequestDto,
+    @Req() req: IAuthenticatedRequest,
   ): Promise<{ exportId: string; status: string }> {
-    return this.datasetService.InitiateExport(snapshotId, config);
+    if (!req.accountInfo || !req.accountInfo.sub) {
+      throw new UnauthorizedException();
+    }
+    return this.datasetService.InitiateExport(snapshotId, config, req.accountInfo.sub);
   }
 
   @ApiOperation({

@@ -40,6 +40,9 @@ import { ReviewerAggregationStats } from './review.repository';
 import { EntityManager } from 'typeorm';
 import { FileEntity } from '../file/file.entity';
 import { FileStatus } from '../file/enums/file-status.enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '../notification/enums/notification-types.enums';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
 
 @Injectable()
 export class ReviewService extends BaseService {
@@ -53,6 +56,7 @@ export class ReviewService extends BaseService {
     private readonly labelChecklistQuestionRepository: LabelChecklistQuestionRepository,
     private readonly reviewErrorRepository: ReviewErrorRepository,
     private readonly reviewErrorTypeRepository: ReviewErrorTypeRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
   }
@@ -358,7 +362,7 @@ export class ReviewService extends BaseService {
   async SubmitReview(dto: SubmitReviewsDto, accountInfo?: AccountInfo) {
     // console.log(JSON.stringify(dto, null, 2));
     const em = await this.reviewRepository.GetEntityManager();
-    return await em.transaction(async (transactionalEntityManager) => {
+    const result = await em.transaction(async (transactionalEntityManager) => {
       const fileLabel = await this.fileLabelRepository.FindById(
         dto.fileLabelId,
         false,
@@ -533,8 +537,33 @@ export class ReviewService extends BaseService {
 
       reviewEntity.checklistAnswer = checklistAnswerEntity;
       reviewEntity.reviewErrors = reviewErrors;
-      return reviewEntity;
+
+      return {
+        review: reviewEntity,
+        decision: dto.decision,
+        annotatorId: fileLabel!.annotatorId,
+        fileLabelId: fileLabel!.id,
+        fileId: fileLabel!.fileId,
+        fileName: fileLabel!.file?.fileName ?? null,
+      };
     });
+
+    if (result.decision === Decision.REJECTED) {
+      const fileNamePart = result.fileName ? ` for file "${result.fileName}"` : '';
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+        accountId: result.annotatorId,
+        title: 'Label rejected',
+        content: `Your label${fileNamePart} was rejected during review. Please address the review feedback and resubmit.`,
+        additionalData: {
+          type: NotificationType.FILE_LABEL_REJECTED,
+          fileLabelId: result.fileLabelId,
+          fileId: result.fileId,
+          reviewId: result.review.id,
+        },
+      });
+    }
+
+    return result.review;
   }
 
   private async recomputeFileStatusAfterReviewerSubmit(

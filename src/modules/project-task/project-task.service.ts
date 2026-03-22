@@ -19,6 +19,9 @@ import { ProjectTaskPriorityEnums } from './enums/task-priority.enums';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { Role } from '../account/enums/role.enum';
 import { EntityManager } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '../notification/enums/notification-types.enums';
+import { NOTIFICATION_EVENTS } from '../notification/enums/notification-events.constants';
 
 @Injectable()
 export class ProjectTaskService {
@@ -27,6 +30,7 @@ export class ProjectTaskService {
     private readonly projectRepository: ProjectRepository,
     private readonly accountRepository: AccountRepository,
     private readonly fileRepository: FileRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -35,7 +39,7 @@ export class ProjectTaskService {
   ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
 
-    return em.transaction(async (transactionalEntityManager) => {
+    const savedProjectTask = await em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project exists
       const project = await this.projectRepository.FindById(
         dto.projectId,
@@ -124,7 +128,7 @@ export class ProjectTaskService {
           [assignedUserRole],
         );
 
-        return updatedProjectTask;
+        return { task: updatedProjectTask, projectName: project.name, fileCount: dto.fileIds.length };
       }
       // 5. Create the project task
       const projectTask = new ProjectTaskEntity();
@@ -151,9 +155,25 @@ export class ProjectTaskService {
         dto.fileIds,
         [assignedUserRole],
       );
-
-      return savedProjectTask;
+      return {
+        task: savedProjectTask,
+        projectName: project.name,
+        fileCount: dto.fileIds.length,
+      };
     });
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+      accountId: dto.assignedUserId,
+      title: 'New task assigned',
+      content: `You have been assigned a new task in project "${savedProjectTask.projectName}" with ${savedProjectTask.fileCount} file(s).`,
+      additionalData: {
+        type: NotificationType.TASK_ASSIGNED,
+        taskId: savedProjectTask.task.id,
+        projectId: dto.projectId,
+      },
+    });
+
+    return savedProjectTask.task;
   }
 
   async FindPaginated(
@@ -195,7 +215,7 @@ export class ProjectTaskService {
   ): Promise<ProjectTaskEntity> {
     const em = await this.projectTaskRepository.GetEntityManager();
 
-    return em.transaction(async (transactionalEntityManager) => {
+    const result = await em.transaction(async (transactionalEntityManager) => {
       // 1. Validate project task exists
       const projectTask = await this.projectTaskRepository.FindById(
         id,
@@ -208,6 +228,7 @@ export class ProjectTaskService {
 
       const previousAssignedRole = projectTask.assignedUserRole;
       const previousFileIds = [...projectTask.fileIds];
+      const previousAssignedTo = projectTask.assignedTo;
 
       // 2. Validate assigned user exists and update fields (if provided)
       if (dto.assignedUserId) {
@@ -318,13 +339,37 @@ export class ProjectTaskService {
         Array.from(rolesToSync),
       );
 
-      return updatedProjectTask;
+      return {
+        task: updatedProjectTask,
+        previousAssignedTo,
+        projectName: updatedProjectTask.project?.name ?? null,
+      };
     });
+
+    if (
+      dto.assignedUserId &&
+      result.previousAssignedTo !== result.task.assignedTo
+    ) {
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+        accountId: result.task.assignedTo,
+        title: 'Task reassigned to you',
+        content: result.projectName
+          ? `A task in project "${result.projectName}" has been reassigned to you.`
+          : 'A task has been reassigned to you.',
+        additionalData: {
+          type: NotificationType.TASK_REASSIGNED,
+          taskId: result.task.id,
+          projectId: result.task.projectId,
+        },
+      });
+    }
+
+    return result.task;
   }
 
   async Delete(id: string): Promise<void> {
     const em = await this.projectTaskRepository.GetEntityManager();
-    await em.transaction(async (transactionalEntityManager) => {
+    const result = await em.transaction(async (transactionalEntityManager) => {
       const projectTask = await this.projectTaskRepository.FindById(
         id,
         false,
@@ -354,6 +399,26 @@ export class ProjectTaskService {
           [projectTask.assignedUserRole],
         );
       }
+
+      return {
+        assignedUserId: projectTask.assignedTo,
+        projectName: projectTask.project?.name ?? null,
+        taskId: projectTask.id,
+        projectId: projectTask.projectId,
+      };
+    });
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.CREATE, {
+      accountId: result.assignedUserId,
+      title: 'Task removed',
+      content: result.projectName
+        ? `Your task in project "${result.projectName}" has been removed.`
+        : 'One of your tasks has been removed.',
+      additionalData: {
+        type: NotificationType.TASK_DELETED,
+        taskId: result.taskId,
+        projectId: result.projectId,
+      },
     });
   }
 

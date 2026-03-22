@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { NOTIFICATION_EVENTS } from './enums/notification-events.constants';
 import { BaseService } from 'src/common/service/base.service';
 import { PaginationResultDto } from 'src/common/pagination/pagination-result.dto';
 import { AccountRepository } from '../account/account.repository';
@@ -13,6 +15,8 @@ import { DeleteNotificationsDto } from './dtos/delete-notifications.dto';
 
 @Injectable()
 export class NotificationService extends BaseService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     private readonly notificationRepository: NotificationRepository,
     private readonly accountRepository: AccountRepository,
@@ -40,6 +44,17 @@ export class NotificationService extends BaseService {
 
     this.notificationGateway.fireNotificationToAccount(dto.accountId, saved);
     return saved;
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.CREATE)
+  async handleNotificationCreate(dto: CreateNotificationDto): Promise<void> {
+    try {
+      await this.Create(dto);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorStack = err instanceof Error ? err.stack : undefined;
+      this.logger.error(`Background notification creation failed: ${errorMessage}`, errorStack);
+    }
   }
 
   async FindPaginated(
