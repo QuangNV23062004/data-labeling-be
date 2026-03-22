@@ -51,7 +51,9 @@ export class NotificationService extends BaseService {
     try {
       await this.Create(dto);
     } catch (err) {
-      this.logger.error('Background notification creation failed', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorStack = err instanceof Error ? err.stack : undefined;
+      this.logger.error(`Background notification creation failed: ${errorMessage}`, errorStack);
     }
   }
 
