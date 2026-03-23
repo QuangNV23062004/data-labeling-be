@@ -17,5 +17,13 @@ export const extractRefreshToken = (request: Request): string | undefined => {
   if (returnedToken) {
     return returnedToken;
   }
+
+  const [type, token] = request?.headers?.authorization?.split(' ') ?? [];
+  returnedToken = type === 'Bearer' ? token : undefined;
+
+  if (returnedToken) {
+    return returnedToken;
+  }
+
   return undefined;
 };
