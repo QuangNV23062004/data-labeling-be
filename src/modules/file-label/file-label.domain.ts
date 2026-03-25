@@ -42,12 +42,18 @@ export class FileLabelDomain {
   }
 
   validateFileAccess(file: FileEntity, accountInfo?: any): void {
-    if (
-      file!.annotatorId !== accountInfo?.sub &&
-      file!.reviewerId !== accountInfo?.sub &&
-      accountInfo?.role !== Role.ADMIN
-    ) {
-      throw new FileAccessNotAllowedException(file!.id);
+    const isPrivileged =
+      accountInfo?.role === Role.ADMIN ||
+      accountInfo?.role === Role.MANAGER;
+
+    if (!isPrivileged) {
+      const isAssigned =
+        file!.annotatorId === accountInfo?.sub ||
+        file!.reviewerId === accountInfo?.sub;
+
+      if (!isAssigned) {
+        throw new FileAccessNotAllowedException(file!.id);
+      }
     }
   }
 

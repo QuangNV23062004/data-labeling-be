@@ -7,6 +7,7 @@ import { serverConfig } from 'src/configs/server/server.config';
 import { emailConfig } from 'src/configs/email/email.config';
 import { clientConfig } from 'src/configs/client/client.config';
 import { storageConfig } from 'src/configs/storage/storage.config';
+import { geminiConfig } from 'src/configs/gemini/gemini.config';
 
 @Global()
 @Module({
@@ -20,6 +21,7 @@ import { storageConfig } from 'src/configs/storage/storage.config';
         emailConfig,
         clientConfig,
         storageConfig,
+        geminiConfig,
       ],
       validate: (configService: Record<string, unknown>) => {
         const typedConfigService = new TypedConfigService(
