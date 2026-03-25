@@ -4,6 +4,7 @@ import { EmailConfig } from './email.interface';
 import { ClientConfig } from './client.interface';
 import { JwtConfig } from './jwt.interface';
 import { StorageConfig } from './storage.interface';
+import { GeminiConfig } from './gemini.interface';
 
 export interface Config {
   server: ServerConfig;
@@ -12,4 +13,5 @@ export interface Config {
   email: EmailConfig;
   client: ClientConfig;
   storage: StorageConfig;
+  gemini: GeminiConfig;
 }

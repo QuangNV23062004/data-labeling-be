@@ -25,6 +25,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { AnnotatorSubmitDto } from './dtos/annotator-submit.dto';
+import { GeminiSuggestDto } from './dtos/gemini-suggest.dto';
 
 // Admin create and update and delete works for debug purpose, use annotator and reviewer for record in file label from token
 @ApiTags('File Labels')
@@ -156,5 +157,28 @@ export class FileLabelController {
       annotatorSubmitDto,
       request?.accountInfo,
     );
+  }
+
+  @Post('gemini/suggest')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
+  @ApiOperation({
+    summary: 'Ask Gemini to suggest a label for a file',
+    description:
+      'Downloads the file and queries Gemini with all available project labels to determine the best label suggestion.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Gemini label suggestion result',
+    schema: {
+      example: {
+        labelId: '123e4567-e89b-12d3-a456-426614174001',
+        labelName: 'Cat',
+        confidence: 0.95,
+        reasoning: 'The image clearly shows a domestic cat.',
+      },
+    },
+  })
+  async GeminiSuggest(@Body() dto: GeminiSuggestDto) {
+    return this.fileLabelService.GeminiSuggest(dto);
   }
 }

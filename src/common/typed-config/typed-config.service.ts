@@ -13,6 +13,8 @@ import { clientValidation } from 'src/configs/client/client.validation';
 import { ClientConfig, JwtConfig } from 'src/interfaces/configs';
 import { storageValidation } from 'src/configs/storage/storage.validation';
 import { StorageConfig } from 'src/interfaces/configs/storage.interface';
+import { geminiValidation } from 'src/configs/gemini/gemini.validation';
+import { GeminiConfig } from 'src/interfaces/configs/gemini.interface';
 
 @Injectable()
 export class TypedConfigService {
@@ -42,6 +44,10 @@ export class TypedConfigService {
     return this.configService.get('storage', { infer: true });
   }
 
+  get gemini(): GeminiConfig {
+    return this.configService.get('gemini', { infer: true });
+  }
+
   getValidatedSchema() {
     const validation = Joi.object({
       ...serverValidation,
@@ -50,6 +56,7 @@ export class TypedConfigService {
       ...emailValidation,
       ...clientValidation,
       ...storageValidation,
+      ...geminiValidation,
     });
     return validation;
   }

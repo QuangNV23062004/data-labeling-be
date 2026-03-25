@@ -25,6 +25,9 @@ import { AnswerTypeEnum } from '../checklist-answer/enums/answer-type.enums';
 import { ChecklistAnswerEntity } from '../checklist-answer/checklist-answer.entity';
 import { LabelChecklistQuestionRepository } from '../label-checklist-question/label-checklist-question.repository';
 import { ProjectConfigurationRepository } from '../project-configuration/project-configuration.repository';
+import { GeminiService, GeminiLabelSuggestion } from 'src/common/gemini/gemini.service';
+import { StorageService } from 'src/common/storage/storage.service';
+import { GeminiSuggestDto } from './dtos/gemini-suggest.dto';
 
 @Injectable()
 export class FileLabelService extends BaseService {
@@ -37,6 +40,8 @@ export class FileLabelService extends BaseService {
     private readonly checklistAnswerDomain: ChecklistAnswerDomain,
     private readonly labelChecklistQuestionRepository: LabelChecklistQuestionRepository,
     private readonly projectConfigurationRepository: ProjectConfigurationRepository,
+    private readonly geminiService: GeminiService,
+    private readonly storageService: StorageService,
   ) {
     super();
   }
@@ -462,5 +467,31 @@ export class FileLabelService extends BaseService {
         transactionalEntityManager,
       );
     });
+  }
+
+  async GeminiSuggest(
+    dto: GeminiSuggestDto,
+  ): Promise<GeminiLabelSuggestion> {
+    const file = await this.fileRepository.FindById(dto.fileId, false);
+
+    this.fileLabelDomain.validateFileExist(file, dto.fileId);
+
+    const projectConfig =
+      await this.projectConfigurationRepository.FindByProjectId(
+        file!.projectId,
+      );
+
+    const availableLabels = projectConfig?.availableLabels ?? [];
+
+    const fileBuffer = await this.storageService.DownloadBlobByUrl(
+      file!.fileUrl,
+    );
+
+    return this.geminiService.suggestLabel(
+      fileBuffer,
+      file!.contentType,
+      availableLabels,
+      dto.additionalPrompt,
+    );
   }
 }
