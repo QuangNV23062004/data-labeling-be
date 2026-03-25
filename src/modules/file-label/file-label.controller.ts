@@ -159,7 +159,7 @@ export class FileLabelController {
     );
   }
 
-  @Get('gemini/suggest')
+  @Post('gemini/suggest')
   @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
   @ApiOperation({
     summary: 'Ask Gemini to suggest a label for a file',
