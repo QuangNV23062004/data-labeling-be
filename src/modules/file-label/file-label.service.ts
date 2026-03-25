@@ -471,10 +471,13 @@ export class FileLabelService extends BaseService {
 
   async GeminiSuggest(
     dto: GeminiSuggestDto,
+    accountInfo?: AccountInfo,
   ): Promise<GeminiLabelSuggestion> {
     const file = await this.fileRepository.FindById(dto.fileId, false);
 
     this.fileLabelDomain.validateFileExist(file, dto.fileId);
+
+    this.fileLabelDomain.validateFileAccess(file!, accountInfo);
 
     const projectConfig =
       await this.projectConfigurationRepository.FindByProjectId(

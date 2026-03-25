@@ -1,4 +1,4 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
 import {
   GoogleGenerativeAI,
   GenerativeModel,
@@ -17,12 +17,18 @@ export interface GeminiLabelSuggestion {
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  private model: GenerativeModel;
+  private model: GenerativeModel | null = null;
 
   constructor(private readonly typedConfigService: TypedConfigService) {
     const { apiKey, model } = this.typedConfigService.gemini;
-    const genAI = new GoogleGenerativeAI(apiKey);
-    this.model = genAI.getGenerativeModel({ model });
+    if (apiKey) {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      this.model = genAI.getGenerativeModel({ model });
+    } else {
+      this.logger.warn(
+        'GEMINI_API_KEY is not set. Gemini label suggestions will be unavailable.',
+      );
+    }
   }
 
   async suggestLabel(
@@ -31,6 +37,12 @@ export class GeminiService {
     availableLabels: LabelEntity[],
     additionalPrompt?: string,
   ): Promise<GeminiLabelSuggestion> {
+    if (!this.model) {
+      throw new ServiceUnavailableException(
+        'Gemini is not configured. Please set the GEMINI_API_KEY environment variable.',
+      );
+    }
+
     if (availableLabels.length === 0) {
       return {
         labelId: null,
@@ -82,7 +94,7 @@ If none of the labels fits, set labelId and labelName to null and explain in rea
     };
 
     try {
-      const result = await this.model.generateContent([
+      const result = await this.model!.generateContent([
         prompt,
         labelsPart,
         filePart,
@@ -91,13 +103,60 @@ If none of the labels fits, set labelId and labelName to null and explain in rea
 
       // Strip optional markdown code fences that the model may add
       const jsonText = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-      const parsed: GeminiLabelSuggestion = JSON.parse(jsonText);
-      return parsed;
+      const raw = JSON.parse(jsonText);
+
+      return this.validateAndNormalize(raw, availableLabels);
     } catch (err) {
       this.logger.error('Gemini label suggestion failed', err);
       throw new InternalServerErrorException(
         'Failed to get label suggestion from Gemini.',
       );
     }
+  }
+
+  private validateAndNormalize(
+    raw: any,
+    availableLabels: LabelEntity[],
+  ): GeminiLabelSuggestion {
+    // Validate reasoning
+    if (typeof raw?.reasoning !== 'string') {
+      throw new InternalServerErrorException(
+        'Gemini returned an invalid response: "reasoning" must be a string.',
+      );
+    }
+
+    // Validate confidence
+    const confidence = Number(raw?.confidence);
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+      throw new InternalServerErrorException(
+        'Gemini returned an invalid response: "confidence" must be a finite number between 0 and 1.',
+      );
+    }
+
+    // Validate labelId
+    const labelId: string | null = raw?.labelId ?? null;
+    if (labelId !== null && typeof labelId !== 'string') {
+      throw new InternalServerErrorException(
+        'Gemini returned an invalid response: "labelId" must be a string or null.',
+      );
+    }
+
+    if (labelId !== null) {
+      const matched = availableLabels.find((l) => l.id === labelId);
+      if (!matched) {
+        throw new InternalServerErrorException(
+          `Gemini returned an unrecognised labelId "${labelId}" that is not in the available labels.`,
+        );
+      }
+      // Derive labelName from the known label entity — do not trust the model
+      return {
+        labelId: matched.id,
+        labelName: matched.name,
+        confidence,
+        reasoning: raw.reasoning,
+      };
+    }
+
+    return { labelId: null, labelName: null, confidence, reasoning: raw.reasoning };
   }
 }

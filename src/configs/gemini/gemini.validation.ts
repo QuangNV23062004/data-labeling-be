@@ -2,9 +2,10 @@ import * as Joi from 'joi';
 
 export const geminiValidation = {
   GEMINI_API_KEY: Joi.string()
-    .required()
-    .description('Google Gemini API key')
-    .error(new Error('GEMINI_API_KEY is required')),
+    .optional()
+    .allow('')
+    .default('')
+    .description('Google Gemini API key'),
 
   GEMINI_MODEL: Joi.string()
     .optional()

@@ -159,7 +159,7 @@ export class FileLabelController {
     );
   }
 
-  @Post('gemini/suggest')
+  @Get('gemini/suggest')
   @Roles(Role.ADMIN, Role.MANAGER, Role.ANNOTATOR, Role.REVIEWER)
   @ApiOperation({
     summary: 'Ask Gemini to suggest a label for a file',
@@ -167,7 +167,7 @@ export class FileLabelController {
       'Downloads the file and queries Gemini with all available project labels to determine the best label suggestion.',
   })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Gemini label suggestion result',
     schema: {
       example: {
@@ -178,7 +178,7 @@ export class FileLabelController {
       },
     },
   })
-  async GeminiSuggest(@Body() dto: GeminiSuggestDto) {
-    return this.fileLabelService.GeminiSuggest(dto);
+  async GeminiSuggest(@Body() dto: GeminiSuggestDto, @Req() req: IAuthenticatedRequest) {
+    return this.fileLabelService.GeminiSuggest(dto, req?.accountInfo);
   }
 }
